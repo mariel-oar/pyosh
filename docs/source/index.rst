@@ -10,8 +10,8 @@ Welcome to pyosh's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   install
-   pyosh
+   installation
+   doc
    examples
 
 Indices and tables

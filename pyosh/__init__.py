@@ -1,1 +1,1 @@
-from .PYOSH import PYOSH
+from .pyosh import PYOSH
