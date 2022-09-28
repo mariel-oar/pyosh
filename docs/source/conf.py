@@ -6,12 +6,14 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../pyosh/'))
 sys.path.insert(0, os.path.abspath('../../pyosh/'))
+sys.path.insert(0, os.path.abspath('../../pyosh/pyosh/'))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'pyosh'
-copyright = '2022, Klaus G. Paul'
+copyright = '2022, Open Apparel Registry'
 author = 'Klaus G. Paul'
 version = '0.1.0'
 release = '0.1.0'
