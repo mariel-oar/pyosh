@@ -1,28 +1,22 @@
+.. pyosh documentation master file, created by
+   sphinx-quickstart on Wed Sep 28 08:54:08 2022.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
 Welcome to pyosh's documentation!
-===================================
-
-**pyosh** s a Python library 
-
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
-
-.. note::
-
-   This project is under active development.
-
-
-
-simpleble module
-================
-
-.. automodule:: pyosh
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Contents
---------
+=================================
 
 .. toctree::
-  :maxdepth: 2
-  :caption: Contents:
+   :maxdepth: 2
+   :caption: Contents:
+
+   intro
+   pyosh
+   examples
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
