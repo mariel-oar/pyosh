@@ -1,5 +1,3 @@
-from bluepy.btle import *
-
 class PYOSH():
     """pyosh main class
     """
