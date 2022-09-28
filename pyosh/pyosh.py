@@ -6,9 +6,9 @@ class PYOSH():
 
     def doobee(self,blah):
         """module doobee
-        :type str, optional
-        :param token: Access token to authenticate to the API
-        :type str, optional
+
+        Args:
+            token (str, optional): Access token to authenticate to the API
         """
         pass
     
