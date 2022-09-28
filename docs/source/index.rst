@@ -1,7 +1,7 @@
 Welcome to pyosh's documentation!
 ===================================
 
-**pyosh** (/lu'make/) is a Python library 
+**pyosh** s a Python library 
 
 Check out the :doc:`usage` section for further information, including
 how to :ref:`installation` the project.
@@ -14,5 +14,5 @@ Contents
 --------
 
 .. toctree::
-:maxdepth: 2
-:caption: Contents:
+  :maxdepth: 2
+  :caption: Contents:
