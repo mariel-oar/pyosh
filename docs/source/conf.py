@@ -33,3 +33,8 @@ html_theme = 'sphinx_rtd_theme'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+man_pages = [
+    ('index', 'pyosh', 'pyosh Documentation',
+     [author], 1)
+]
