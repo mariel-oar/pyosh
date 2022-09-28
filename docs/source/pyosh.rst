@@ -4,10 +4,10 @@ pyosh package
 Submodules
 ----------
 
-pyosh.PYOSH module
+pyosh module
 ------------------
 
-.. automodule:: pyosh.PYOSH
+.. automodule:: pyosh
    :members:
    :undoc-members:
    :show-inheritance:
