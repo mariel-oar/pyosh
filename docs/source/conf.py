@@ -2,9 +2,9 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'pyosh'
+copyright = '2022, Open Supply Hub'
+author = 'Klaus G. Paul'
 
 release = '0.1'
 version = '0.1.0'

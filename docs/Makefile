@@ -1,5 +1,8 @@
 # Minimal makefile for Sphinx documentation
 #
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../../pyosh/'))
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
