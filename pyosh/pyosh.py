@@ -4,11 +4,18 @@ class PYOSH():
     def __init__(self):
         pass
 
-    def doobee(self,blah):
-        """module doobee
+    def doobee(self,blah="empty"):
+        """module doobee, really does nothing fancy
 
-        Args:
-            token (str, optional): Access token to authenticate to the API
+        Parameters
+        ----------
+        token : str, optional
+          Access token to authenticate to the API
+
+        Returns
+        -------
+        None
+          Nothing useful
         """
         pass
     
