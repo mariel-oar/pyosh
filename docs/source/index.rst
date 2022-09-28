@@ -10,6 +10,16 @@ how to :ref:`installation` the project.
 
    This project is under active development.
 
+
+
+simpleble module
+================
+
+.. automodule:: pyosh
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Contents
 --------
 
