@@ -36,4 +36,4 @@ pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
-htmlhelp_basename = 'simplebledoc'
+#htmlhelp_basename = 'simplebledoc'
