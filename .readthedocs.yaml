@@ -22,7 +22,6 @@ sphinx:
 
 python:
   # Install our python package before building the docs
-  version: "3.10"
   install:
     - requirements: requirements.txt
 
