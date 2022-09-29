@@ -15,5 +15,6 @@ setup(
        "requests",
        "pandas",
        "pytest",
+       "pyyaml",
    ],
 )

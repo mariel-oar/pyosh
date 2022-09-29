@@ -7,6 +7,6 @@ Documentation
     :members: OSH_API
     :inherited-members:
 
-.. autoclass:: pyosh.OSH_API
+#.. autoclass:: pyosh.OSH_API
 
 
