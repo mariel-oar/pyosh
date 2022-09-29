@@ -6,12 +6,8 @@ Documentation
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: pyosh.pyosh
+.. autoclass:: pyosh.OSH_API
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: pyosh.pyosh.PYOSH
-    :members:
-    :undoc-members:
-    :show-inheritance:

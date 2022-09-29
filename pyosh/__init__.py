@@ -1,1 +1,1 @@
-from .pyosh import PYOSH
+from .pyosh import OSH_API
