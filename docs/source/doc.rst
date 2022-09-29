@@ -1,13 +1,11 @@
 Documentation
 =============
 
-.. autoclass:: pyosh
+.. automodule:: pyosh
     :members:
-    :undoc-members:
-    :show-inheritance:
+    :inherited-members:
 
-.. autoclass:: pyosh.OSH_API
-    :members:
-    :undoc-members:
-    :show-inheritance:
+#.. autoclass:: pyosh.OSH_API
+#    :members:
+#    :inherited-members:
 

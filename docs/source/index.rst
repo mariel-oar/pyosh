@@ -11,6 +11,7 @@ Welcome to pyosh's documentation!
    :caption: Contents:
 
    installation
+   authentication
    doc
    examples
 
