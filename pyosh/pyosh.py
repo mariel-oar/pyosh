@@ -1,6 +1,7 @@
 """pyosh Package for accessing the https://opensupplyhub.org API using python"""
 
 __version__ = "0.1.0"
+
 import os
 import yaml
 import requests
@@ -10,15 +11,23 @@ import urllib
 
 class OSH_API():
     """This is a class that wraps API access to https://opensupplyhub.org.
-    :param url: URL of endpoint to use, defaults to https://opensupplyhub.org
-    :type str, optional
-    :param token: Access token to authenticate to the API
-    :type str, optional
+
+    Parameters
+    ----------
+    url: str, optional, default = "http://opensupplyhub.org"
+       URL of endpoint to use, defaults to https://opensupplyhub.org
+    token: str
+       Access token to authenticate to the API
     """
-    def __init__(self,url="http://opensupplyhub.org",token=""):
+    def __init__(self,url : str = "http://opensupplyhub.org",token : str = ""):
         result = {}
         self.header = {}
-        self.url = url
+        
+        if "OSH_URL" in os.environ.keys():
+            self.url = os.environ["OSH_URL"]
+        else:
+            self.url = url
+            
         if token > "":
             self.token = token
         elif "OSH_TOKEN" in os.environ.keys():
@@ -58,7 +67,19 @@ class OSH_API():
     
     
     def get_countries(self):
-        """Get a list of country country codes and names"""
+        """Get a list of country country codes and names
+        
+        Returns
+        -------
+        pandas.DataFrame   
+           +-----------+---------------------------------+
+           |column     | description                     |
+           +===========+=================================+
+           |iso_3166_2 | ISO 3166-2 Alpha-2 Country Code |
+           +-----------+---------------------------------+
+           |country    | ISO 3166 Country Name           |
+           +-----------+---------------------------------+
+        """
         
         r = requests.get(f"{self.url}/api/countries",headers=self.header)
         if r.ok:
