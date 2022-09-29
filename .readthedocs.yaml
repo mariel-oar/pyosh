@@ -28,7 +28,7 @@ python:
     - method: pip
       path: .
     - method: pip
-      path: docs/
+      path: sphinx-rtd-theme
 
   system_packages: true
 
