@@ -27,7 +27,7 @@ python:
     - requirements: requirements.txt
     - method: pip
       path: .
-    - method: pip -r
+    - method: pip
       path: docs/
 
   system_packages: true
