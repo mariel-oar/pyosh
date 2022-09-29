@@ -22,9 +22,9 @@ sphinx:
 
 python:
   # Install our python package before building the docs
+  version: "3.10"
   install:
-    - method: pip
-    - /requirements.txt
+    - requirements: requirements.txt
 
 # If using Sphinx, optionally build your docs in additional formats such as PDF
 # formats:
