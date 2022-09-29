@@ -26,10 +26,10 @@ python:
   install:
     #- requirements: requirements.txt
     - requirements: docs/requirements.txt
-    - method: pip
-      path: .
+    #- method: pip
+    #  path: .
 
-  system_packages: true
+  #system_packages: true
 
 # If using Sphinx, optionally build your docs in additional formats such as PDF
 # .formats:
