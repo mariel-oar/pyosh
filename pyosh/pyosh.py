@@ -1,8 +1,6 @@
 """pyosh Package for accessing the https://opensupplyhub.org API using python"""
 
 __version__ = "0.1.0"
-
-
 import os
 import yaml
 import requests
@@ -75,7 +73,13 @@ class OSH_API():
             
         
     def get_countries_active_count(self):
-        """Get a count of disctinct country codes for active facilities."""
+        """Get a count of disctinct country codes used by active facilities.
+        
+        Returns
+        -------
+        active_count: int
+           disctinct country codes used by active facilities
+        """
         
         r = requests.get(f"{self.url}/api/countries/active_count",headers=self.header)
         if r.ok:
@@ -89,7 +93,17 @@ class OSH_API():
         return data
     
     def get_contributors(self):
-        """Get a list of contributors and their ID."""
+        """Get a list of contributors and their ID.
+        
+        Returns
+        -------
+        pandas.DataFrame with columns
+        
+        list_id: int
+           the numeric ID of the list
+        list_name: str
+           the name of the list
+        """
         
         r = requests.get(f"{self.url}/api/contributors",headers=self.header)
         if r.ok:
@@ -105,8 +119,20 @@ class OSH_API():
     
     def get_contributor_lists(self,contributor_id):
         """Get lists for specific contributor.
-        :param contributor_id: numeric contributor id
-        :type str, int
+        
+        Parameters
+        ----------
+        contributor_id: str, optional
+           numeric contributor id
+           
+        Returns
+        -------
+        pandas.DataFrame with columns
+        
+        list_id: int
+           the numeric ID of the list
+        list_name: str
+           the name of the list
         """
         
         r = requests.get(f"{self.url}/api/contributor-lists/?contributors={contributor_id}",headers=self.header)
@@ -278,3 +304,202 @@ class OSH_API():
                 have_next = False
         
         return pd.DataFrame(alldata)
+    
+    
+    def post_facilities(self,data={},name="",country_code="",sector="",number_of_workers="",facility_type="",
+                        processing_type="",product_type="",parent_company_name="",native_language_name=""):
+        """Add a single facility record
+        """
+        return
+    
+    def post_facilities_bulk(self,records=[]):
+        """Add multiple records
+        """
+        return
+    
+    
+    def get_facilities_count(self):
+        """/facilities/count/
+        
+        Returns
+        -------
+        active_count: int
+           disctinct country codes used by active facilities
+        """
+        
+        r = requests.get(f"{self.url}/api/facilities/count",headers=self.header)
+        if r.ok:
+            data = int(json.loads(r.text)["count"])
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = -1
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.countries_active_count = data
+        
+        return data
+    
+    
+    def get_facility(self,osh_id : str, return_extended_fields : bool = False ):
+        """/facilities/{id}/
+        
+        Parameters
+        ----------
+        osh_id: str
+           sixteen character OS ID
+        
+        Returns
+        -------
+        active_count: int
+           disctinct country codes used by active facilities
+        """
+        
+        r = requests.get(f"{self.url}/api/facilities/{osh_id}/",headers=self.header)
+        if r.ok:
+            data = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+            
+            entry = {
+                "id": data["id"],
+                "lon": data["geometry"]["coordinates"][0],
+                "lat": data["geometry"]["coordinates"][1]
+            }
+            for k,v in data["properties"].items():
+                if k.startswith("ppe_"):
+                    continue
+                elif isinstance(v,list):
+                    if len(v) > 0 and isinstance(v[0],dict):
+                        lines = []
+                        for vv in v:
+                            lines.append("|".join([f"{kkk}:{vvv}" for kkk,vvv in vv.items()]))
+                        entry[k] = "\n".join(lines).replace("lng:","lon:")
+                    else:
+                        entry[k] = "\n".join(v)
+                elif k == "extended_fields" and return_extended_fields:
+                    for kk in v.keys():
+                        for vv in v[kk]:
+                            lines.append("|".join([f"{kkk}:{vvv}" for kkk,vvv in vv.items()]))
+                        entry[f"{kk}_extended"] = "\n".join(lines).replace("lng:","lon:")
+                elif return_extended_fields:
+                    pass
+                else:
+                    entry[k] = v
+            data = pd.DataFrame(entry,index=[0])
+            
+        else:
+            data = pd.DataFrame()
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        
+        return data
+    
+    
+    def get_facility_processing_types(self):
+        """/facility-processing-types/
+        
+        Returns
+        -------
+        facility_processing_types: list
+           something
+        """
+        
+        r = requests.get(f"{self.url}/api/facility-processing-types/",headers=self.header)
+        if r.ok:
+            facility_processing_types = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+            alldata = []
+            for facility_processing_type in facility_processing_types:
+                for processingType in facility_processing_type["processingTypes"]:
+                    alldata.append({
+                        "facility_type":facility_processing_type["facilityType"],
+                        "processing_type":processingType
+                    })
+            data = pd.DataFrame(alldata)
+        else:
+            data = pd.DataFrame(alldata)
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+            
+        self.facility_processing_types = data
+        return data    
+    
+       
+    def get_parent_companies(self):
+        """/api/product-types/"""
+        
+        r = requests.get(f"{self.url}/api/parent-companies/",headers=self.header)
+        if r.ok:
+            data = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = []
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.parent_companies = data
+
+        return pd.DataFrame(self.parent_companies,columns=["key_or_something","parent_company"])
+    
+       
+    def get_product_types(self):
+        """/api/product-types/"""
+        
+        r = requests.get(f"{self.url}/api/product-types/",headers=self.header)
+        if r.ok:
+            data = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = []
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.product_types = data
+
+        return pd.DataFrame(self.product_types,columns=["product_type"])
+        
+    
+       
+    def get_sectors(self):
+        """/api/sectors/"""
+        
+        r = requests.get(f"{self.url}/api/sectors/",headers=self.header)
+        if r.ok:
+            data = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = []
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.sectors = data
+
+        return pd.DataFrame(self.sectors,columns=["sectors"])
+    
+
+    def get_workers_ranges(self):
+        """/api/workers-range/"""
+        
+        r = requests.get(f"{self.url}/api/workers-ranges/",headers=self.header)
+        if r.ok:
+            workers_range = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+            alldata = []
+            for workers_range in workers_ranges:
+                if "-" in workers_range:
+                    lower,upper = workers_range.split("-")
+                elif "Less" in workers_range:
+                    upper = workers_range.split(" ")[-1]
+                    lower = 1
+                elif "More" in workers_range:
+                    lower = workers_range.split(" ")[-1]
+                    upper = 999999
+                else:
+                    lower = -1
+                    upper = -1
+                alldata.append({
+                    "workers_range":workers_range,
+                    "lower":lower,
+                    "upper":upper,
+                })
+            data = pd.DataFrame(alldata)
+        else:
+            data = pd.DataFrame({
+                    "workers_range":[],
+                    "lower":[],
+                    "upper":[],
+            })
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.workers_ranges = data
+
+        return data
