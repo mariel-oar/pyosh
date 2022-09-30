@@ -8,9 +8,10 @@ Welcome to pyosh's documentation!
    :caption: Contents:
 
    installation
-   authentication
    doc
+   authentication
    examples
+   datamodel
 
 Indices and tables
 ==================

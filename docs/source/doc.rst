@@ -1,7 +1,7 @@
 Documentation
 =============
 
-.. module:: pyosh.OSH_API
+#.. module:: pyosh.OSH_API
 
 .. automodule:: pyosh
     :members: OSH_API

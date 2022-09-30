@@ -18,11 +18,12 @@ class OSH_API():
     ----------
     url: str, optional, default = "http://opensupplyhub.org"
        URL of endpoint to use, defaults to https://opensupplyhub.org
-    token: str
-       Access token to authenticate to the API
+    token: str, optional, default = ""
+       Access token to authenticate to the API if not using any other method described in the `Authentication section <authentication.html>`_
     """
         
     def __init__(self,url : str = "http://opensupplyhub.org",token : str = "",):
+        """object generation method"""
         result = {}
         self.header = {}
         
@@ -327,27 +328,37 @@ class OSH_API():
            
         Returns
         -------
-        pandas.DataFrame with columns
-        
-        os_id : string
-           The OS ID
-        lon : float
-           Geo latitude
-        lat : float
-           Geo longitude
-        name : string
-           Facility name
-        address : string
-           Facility address
-        country_code : string
-           ISO 3166-2 Alpha country code
-        country_name : string
-           ISO 3166 Country name
-        has_approved_claim : boolean
-           Flag indicating if facility has been claimed by owner, manager, or other authorised person
-        is_closed : boolean
-           Flag indicating if facility has been closed (_True_), or is currently open (_False_)
-        
+        pandas.DataFrame
+
+            +------------------+-----------------------------------------------+-------+
+            |column            | description                                   | type  |
+            +==================+===============================================+=======+
+            |os_id             | The OS ID                                     | str   |
+            +------------------+-----------------------------------------------+-------+
+            |lon               | Geographics longitude in degrees              | float |
+            +------------------+-----------------------------------------------+-------+
+            |lat               | Geographics latitude in degrees               | float |
+            +------------------+-----------------------------------------------+-------+
+            |name              | Facility name                                 | str   |
+            +------------------+-----------------------------------------------+-------+
+            |address           | Facility address                              | str   |
+            +------------------+-----------------------------------------------+-------+
+            |country_code      |`ISO 3166-2 Alpha country code                 | str   |
+            |                  |<https://iso.org/obp/ui/#search/code/>`_       |       |
+            +------------------+-----------------------------------------------+-------+
+            |country_name      |`ISO 3166 country name                         | str   |
+            |                  |<https://iso.org/obp/ui/#search/code/>`_       |       |
+            +------------------+-----------------------------------------------+-------+
+            |address           | Facility address                              | str   |
+            +------------------+-----------------------------------------------+-------+
+            |has_approved_claim| Flag indicating if facility has been claimed  | bool  |
+            |                  |                                               |       |
+            |                  | by owner, manager, or other authorised person |       |
+            +------------------+-----------------------------------------------+-------+
+            |is_closed         | Flag indicating if facility has been closed   | bool  |
+            |                  |                                               |       |
+            |                  | (*True*), or is currently open (*False*)      |       |
+            +------------------+-----------------------------------------------+-------+
         """
         
         parameters = []

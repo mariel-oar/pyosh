@@ -32,9 +32,9 @@ Push-Pull API
 
 For users who have data they would like to contribute to the OSH via API, 
 access to our push pull API includes the ability to:
+
 - Query the OAR system without having to add data to the tool
-- Contribute data to the tool and, for each facility, choose whether or not to be 
-  publicly connected with that facility (e.g. as Higg, or as "A service provider")
+- Contribute data to the tool and, for each facility, choose whether or not to be publicly connected with that facility (e.g. as Higg, or as "A service provider")
 
 Access to the push pull API is on an annual subscription basis. In addition to the annual 
 subscription fee, there is a one-time on-boarding fee. The OSH team will prepare a custom 
@@ -48,7 +48,7 @@ variety of needs. Contact our team and we'll help build a package that's right f
 
 Get Started
 -----------
-- Have questions about which package is right for you? `Contact the team https://info.openapparel.org/contact-us`_ to set up a call. We'll be in touch within two business days.
+- Have questions about which package is right for you? `Contact the team <https://info.openapparel.org/contact-us>`_ to set up a call. We'll be in touch within two business days.
 - Create a free account on the OAR, if you don’t already have one.
 - Complete this short form letting us know which package you would like access to [if known].
 
