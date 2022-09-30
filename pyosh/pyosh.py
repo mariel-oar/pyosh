@@ -21,6 +21,7 @@ class OSH_API():
     token: str
        Access token to authenticate to the API
     """
+        
     def __init__(self,url : str = "http://opensupplyhub.org",token : str = "",):
         result = {}
         self.header = {}
@@ -67,8 +68,15 @@ class OSH_API():
         self.countries = []
         self.countries_active_count = -1
         self.contributors = []
+        self.post_facility_results = {
+            "NEW_FACILITY":1,
+            "MATCHED":2,
+            "POTENTIAL_MATCH":0,
+            "ERROR_MATCHING":-1
+        }
         
         return 
+    
     
     
     def get_contributors(self) -> pd.DataFrame:
@@ -121,7 +129,10 @@ class OSH_API():
            +-----------+---------------------------------+------+
         """
         
+
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/contributor-lists/?contributors={contributor_id}",headers=self.header)
+
         if r.ok:
             data = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -153,7 +164,10 @@ class OSH_API():
            +-----------+---------------------------------+------+
         """
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/contributor-embed-configs/{contributor_id}/",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
+        
         if r.ok:
             data = json.loads(r.text)
             alldata = {}
@@ -201,7 +215,10 @@ class OSH_API():
            +-----------+---------------------------------------+------+
         """
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/contributor-types",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
+        
         if r.ok:
             data = [value for value,display in json.loads(r.text)]
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -228,7 +245,9 @@ class OSH_API():
            +-----------+---------------------------------+------+
         """
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/countries",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -249,7 +268,9 @@ class OSH_API():
            disctinct country codes used by active facilities
         """
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/countries/active_count",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = int(json.loads(r.text)["count"])
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -383,8 +404,9 @@ class OSH_API():
         alldata = []
         
         while have_next:
-            #print(request_url)
+            self.last_api_call_epoch = time.time()
             r = requests.get(request_url,headers=self.header)
+            self.last_api_call_duration = time.time()-self.last_api_call_epoch
             if r.ok:
                 data = json.loads(r.text)
                 
@@ -412,13 +434,195 @@ class OSH_API():
         return pd.DataFrame(alldata)
     
     
-    def post_facilities(self,data={},name="",country_code="",sector="",number_of_workers="",facility_type="",
-                        processing_type="",product_type="",parent_company_name="",native_language_name=""):
-        """Add a single facility record
-        """
-        return
+    def _flatten_facilities_json(self,json_data):
+        """Convert deep facility data to a flat key,value dict"""
+        base_entry = {}
+        for k,v in json_data.items():
+            if k == "matches":
+                continue
+            elif k == "geocoded_geometry":
+                try:
+                    base_entry["lon"] = v["coordinates"][0]
+                    base_entry["lat"] = v["coordinates"][1]
+                except:
+                    base_entry["lon"] = -1
+                    base_entry["lat"] = -1
+            else:
+                if v is not None:
+                    base_entry[k] = v
+                else:
+                    base_entry[k] = ""
+
+        alldata = []
+        if len(json_data["matches"])>0:
+            match_no = 1
+            for match in json_data["matches"]:
+                new_data = {"match_no":match_no}
+                new_data.update(base_entry)#.copy()
+                for k,v in match.items():
+                    if isinstance(v,list):
+                        a = 1/0
+                        pass
+                    elif k in ["Feature","type"]:
+                        pass
+                    elif k == "geometry":
+                        new_data["match_lon"] = v["coordinates"][0]
+                        new_data["match_lat"] = v["coordinates"][1]
+                    elif isinstance(v,dict):
+                        for kk,vv in v.items():
+                            if isinstance(vv,list):
+                                if len(vv) == 0:
+                                    new_data[f"match_{kk}"] = ""
+                                else:
+                                    lines = []
+                                    for vvv in vv:
+                                        lines.append("|".join([f"{kkkk}:{vvvv}" for kkkk,vvvv in vvv.items()]))
+                                    new_data[f"match_{kk}"] = "\n".join(lines).replace("lng:","lon:")
+                            elif isinstance(vv,dict):
+                                for kkk,vvv in vv.items():
+                                    lines = []
+                                    for entry in vvv:
+                                        if isinstance(entry,dict):
+                                            lines.append("|".join([f"{kkkk}:{vvvv}" for kkkk,vvvv in entry.items()]))
+                                        elif isinstance(entry,str):
+                                            lines = [vvv]
+                                        else:
+                                            a = 1/0
+                                    new_data[f"match_{kk}_{kkk}"] = "\n".join(lines).replace("lng:","lon:")
+                                pass
+                            elif kk.startswith("ppe_"):
+                                continue
+                            else:
+                                new_data[f"match_{kk}"] = vv
+                        pass
+                    else:
+                        new_data[f"match_{k}"] = v
+                alldata.append(new_data)
+                match_no += 1
+        else:
+            alldata.append(base_entry)
+            
+        return alldata
     
-    def post_facilities_bulk(self,records=[]):
+    
+    def post_facilities(self, data : dict = {}, name : str = "", address : str = "", country : str = "", sector : str ="",
+                        number_of_workers : str = "",facility_type : str = "",
+                        processing_type : str = "", product_type : str = "",
+                        parent_company_name : str = "", native_language_name : str = "",
+                        create : bool = False, public : bool = True, textonlyfallback : bool = False) -> pd.DataFrame:
+        """Add a single facility record
+
+        Parameters
+        ----------
+        data : dict, optional
+            _description_, by default {}
+        country_code : str, optional
+            _description_, by default ""
+        sector : str, optional
+            _description_, by default ""
+        number_of_workers : str, optional
+            _description_, by default ""
+        facility_type : str, optional
+            _description_, by default ""
+        processing_type : str, optional
+            _description_, by default ""
+        product_type : str, optional
+            _description_, by default ""
+        parent_company_name : str, optional
+            _description_, by default ""
+        native_language_name : str, optional
+            _description_, by default ""
+        create : bool, optional
+            _description_, by default False
+        public : bool, optional
+            _description_, by default True
+        textonlyfallback : bool, optional
+            _description_, by default False
+
+        Returns
+        -------
+        something
+        """
+        if len(data) == 0:
+            payload = {}
+            
+            if len(name)>0:
+                payload["name"] = name.strip()
+            else:
+                self.result = {"code":-100,"message":"Error: Empty facility name given, we need a name."}
+                return pd.DataFrame([])
+            
+            if len(address)>0:
+                payload["address"] = address.strip()
+            else:
+                self.result = {"code":-101,"message":"Error: Empty address given, we need an address."}
+                return pd.DataFrame([])
+            
+            if len(country)>0:
+                payload["country"] = country.strip()
+            else:
+                self.result = {"code":-102,"message":"Error: Empty country name given, we need a country."}
+                return pd.DataFrame([])
+            
+            if len(sector)>0:
+                payload["sector"] = sector.strip()
+            else:
+                payload["sector"] = "Unspecified"
+
+            if len(number_of_workers)>0:
+                payload["number_of_workers"] = number_of_workers.strip()
+                
+            if len(facility_type)>0:
+                payload["facility_type"] = facility_type.strip()
+                
+            if len(processing_type)>0:
+                payload["processing_type"] = processing_type.strip()
+                
+            if len(product_type)>0:
+                payload["product_type"] = product_type.strip()
+                
+            if len(parent_company_name)>0:
+                payload["parent_company_name"] = parent_company_name.strip()
+                
+            if len(native_language_name)>0:
+                payload["native_language_name"] = native_language_name.strip()
+                
+        else:
+            payload = data
+        
+        parameters = "?"
+        if create:
+            parameters += "create=true"
+        else:
+            parameters += "create=false"
+            
+        if public:
+            parameters += "&public=true"
+        else:
+            parameters += "&public=false"
+            
+        if textonlyfallback:
+            parameters += "&textonlyfallback=true"
+        else:
+            parameters += "&textonlyfallback=false"
+                  
+        self.last_api_call_epoch = time.time()
+        r = requests.post(f"{self.url}/api/facilities/?{parameters}",headers=self.header,data=payload)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
+        if r.ok:
+            data = json.loads(r.text)
+            data = self._flatten_facilities_json(data)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = pd.DataFrame({"status":"HTTP_ERROR"})
+            self.result = {"code":-1,"message":f"{r.status_code}"}    
+                
+        return pd.DataFrame(data)
+    
+    
+    
+    
+    def post_facilities_bulk(self, records : list = [], dataframe : pd.DataFrame = pd.DataFrame([])) -> pd.DataFrame:
         """Add multiple records
         """
         return
@@ -433,7 +637,9 @@ class OSH_API():
            disctinct country codes used by active facilities
         """
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/facilities/count",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = int(json.loads(r.text)["count"])
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -459,7 +665,9 @@ class OSH_API():
            disctinct country codes used by active facilities
         """
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/facilities/{osh_id}/",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -507,7 +715,9 @@ class OSH_API():
            something
         """
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/facility-processing-types/",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             facility_processing_types = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -530,7 +740,9 @@ class OSH_API():
     def get_parent_companies(self):
         """/api/product-types/"""
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/parent-companies/",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -545,7 +757,9 @@ class OSH_API():
     def get_product_types(self):
         """/api/product-types/"""
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/product-types/",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -561,7 +775,9 @@ class OSH_API():
     def get_sectors(self):
         """/api/sectors/"""
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/sectors/",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
@@ -576,7 +792,9 @@ class OSH_API():
     def get_workers_ranges(self):
         """/api/workers-range/"""
         
+        self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/workers-ranges/",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             workers_ranges = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
