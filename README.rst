@@ -48,9 +48,7 @@ variety of needs. Contact our team and we'll help build a package that's right f
 
 Get Started
 -----------
-- Have questions about which package is right for you? 
-`Contact the team https://info.openapparel.org/contact-us`_ to set up a call. 
-We'll be in touch within two business days.
+- Have questions about which package is right for you? `Contact the team https://info.openapparel.org/contact-us`_ to set up a call. We'll be in touch within two business days.
 - Create a free account on the OAR, if you don’t already have one.
 - Complete this short form letting us know which package you would like access to [if known].
 
