@@ -10,7 +10,7 @@ Inputs
 ~~~~~~
 
 JSON Schema
-~~~~~~~~~~~
+```````````
 
 .. code-block:: json
    :linenos:
