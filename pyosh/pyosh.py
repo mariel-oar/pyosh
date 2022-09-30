@@ -8,6 +8,8 @@ import requests
 import json
 import pandas as pd
 import urllib
+import time
+from typing import Union
 
 class OSH_API():
     """This is a class that wraps API access to https://opensupplyhub.org.
@@ -19,7 +21,7 @@ class OSH_API():
     token: str
        Access token to authenticate to the API
     """
-    def __init__(self,url : str = "http://opensupplyhub.org",token : str = ""):
+    def __init__(self,url : str = "http://opensupplyhub.org",token : str = "",):
         result = {}
         self.header = {}
         
@@ -59,6 +61,9 @@ class OSH_API():
             "Authorization": f"Token {self.token}"
         }
         
+        
+        self.last_api_call_epoch = -1
+        self.last_api_call_duration = -1
         self.countries = []
         self.countries_active_count = -1
         self.contributors = []
@@ -66,19 +71,161 @@ class OSH_API():
         return 
     
     
-    def get_countries(self):
-        """Get a list of country country codes and names
+    def get_contributors(self) -> pd.DataFrame:
+        """Get a list of contributors and their ID.
         
         Returns
         -------
         pandas.DataFrame   
-           +-----------+---------------------------------+
-           |column     | description                     |
-           +===========+=================================+
-           |iso_3166_2 | ISO 3166-2 Alpha-2 Country Code |
-           +-----------+---------------------------------+
-           |country    | ISO 3166 Country Name           |
-           +-----------+---------------------------------+
+           +-----------+---------------------------------+------+
+           |column     | description                     | type |
+           +===========+=================================+======+
+           |list_id    | The numeric ID of the list      | int  |
+           +-----------+---------------------------------+------+
+           |list_name  | The name of the list            | str  |
+           +-----------+---------------------------------+------+
+        """
+        
+        self.last_api_call_epoch = time.time()
+        r = requests.get(f"{self.url}/api/contributors",headers=self.header)
+        self.last_api_call_duration = time.time()-self.last_api_call_epoch
+
+        if r.ok:
+            data = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = []
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.contributors = data
+        
+        return pd.DataFrame(self.contributors,columns=["contributor_id","contributor_name"])
+    
+    
+    def get_contributor_lists(self,contributor_id : Union[int,str]) -> pd.DataFrame:
+        """Get lists for specific contributor.
+        
+        Parameters
+        ----------
+        contributor_id: str
+           numeric contributor id
+           
+        Returns
+        -------
+        pandas.DataFrame   
+           +-----------+---------------------------------+------+
+           |column     | description                     | type |
+           +===========+=================================+======+
+           |list_id    | The numeric ID of the list      | int  |
+           +-----------+---------------------------------+------+
+           |list_name  | The name of the list            | str  |
+           +-----------+---------------------------------+------+
+        """
+        
+        r = requests.get(f"{self.url}/api/contributor-lists/?contributors={contributor_id}",headers=self.header)
+        if r.ok:
+            data = json.loads(r.text)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = []
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.contributors = data
+        
+        return pd.DataFrame(self.contributors,columns=["list_id","list_name"])
+            
+    
+    def get_contributor_embed_configs(self,contributor_id : Union[int,str]) -> pd.DataFrame:
+        """Get embedded maps configuration for specific contributor.
+        
+        Parameters
+        ----------
+        contributor_id: str
+           numeric contributor id
+           
+        Returns
+        -------
+        pandas.DataFrame   
+           +-----------+---------------------------------+------+
+           |column     | description                     | type |
+           +===========+=================================+======+
+           |list_id    | The numeric ID of the list      | int  |
+           +-----------+---------------------------------+------+
+           |list_name  | The name of the list            | str  |
+           +-----------+---------------------------------+------+
+        """
+        
+        r = requests.get(f"{self.url}/api/contributor-embed-configs/{contributor_id}/",headers=self.header)
+        if r.ok:
+            data = json.loads(r.text)
+            alldata = {}
+            num_undefined = 1
+            have_undefined = False
+            for k,v in data.items():
+                if k == 'embed_fields':
+                    for embedded_field in v:
+                        for column in ['display_name','visible','order','searchable']:
+                            if len(embedded_field["column_name"]) ==  0: # ref  https://github.com/open-apparel-registry/open-apparel-registry/issues/2200
+                                have_undefined = True
+                                alldata[f'undefined_{num_undefined}_{column}'] = embedded_field[column]
+                            else:
+                                have_undefined = False
+                                alldata[f'{embedded_field["column_name"]}_{column}'] = embedded_field[column]
+                        if have_undefined:
+                            num_undefined += 1
+                            have_undefined = False
+                elif k == 'extended_fields':
+                    for i in range(len(v)):
+                        alldata[f'{k}_{i}'] = v[i]
+                else:
+                    alldata[k] = [v]
+            data = alldata
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = []
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        
+        return pd.DataFrame(data)
+        
+
+    
+    def get_contributor_types(self) -> pd.DataFrame:
+        """Get a list of contributor type choices. The original REST API returns a list of pairs of values and display names.
+        As all display names and values are identical, we only return the values used in the database.
+        
+        Returns
+        -------
+        pandas.DataFrame   
+           +-----------------+---------------------------------+------+
+           |column           | description                     | type |
+           +===========+=======================================+======+
+           |contributor_type | The values of contributor types | str  |
+           +-----------+---------------------------------------+------+
+        """
+        
+        r = requests.get(f"{self.url}/api/contributor-types",headers=self.header)
+        if r.ok:
+            data = [value for value,display in json.loads(r.text)]
+            self.result = {"code":0,"message":f"{r.status_code}"}
+        else:
+            data = []
+            self.result = {"code":-1,"message":f"{r.status_code}"}
+        self.contributors = data
+        
+        return pd.DataFrame(self.contributors,columns=["contributor_type"])
+    
+    
+    def get_countries(self) -> pd.DataFrame:
+        """Get a list of `ISO 3166-2 Alpha 2 country codes and English short names <https://www.iso.org/obp/ui/#search>` used. 
+        
+        Returns
+        -------
+        pandas.DataFrame   
+           +-----------+---------------------------------+------+
+           |column     | description                     | type |
+           +===========+=================================+======+
+           |iso_3166_2 | ISO 3166-2 Alpha-2 Country Code | str  |
+           +-----------+---------------------------------+------+
+           |country    | ISO 3166 Country Name           | str  |
+           +-----------+---------------------------------+------+
         """
         
         r = requests.get(f"{self.url}/api/countries",headers=self.header)
@@ -93,12 +240,12 @@ class OSH_API():
         return pd.DataFrame(self.countries,columns=["iso_3166_2","country"])
             
         
-    def get_countries_active_count(self):
+    def get_countries_active_count(self) -> int:
         """Get a count of disctinct country codes used by active facilities.
         
         Returns
         -------
-        active_count: int
+        int
            disctinct country codes used by active facilities
         """
         
@@ -112,67 +259,14 @@ class OSH_API():
         self.countries_active_count = data
         
         return data
-    
-    def get_contributors(self):
-        """Get a list of contributors and their ID.
-        
-        Returns
-        -------
-        pandas.DataFrame with columns
-        
-        list_id: int
-           the numeric ID of the list
-        list_name: str
-           the name of the list
-        """
-        
-        r = requests.get(f"{self.url}/api/contributors",headers=self.header)
-        if r.ok:
-            data = json.loads(r.text)
-            self.result = {"code":0,"message":f"{r.status_code}"}
-        else:
-            data = []
-            self.result = {"code":-1,"message":f"{r.status_code}"}
-        self.contributors = data
-        
-        return pd.DataFrame(self.contributors,columns=["contributor_id","contributor_name"])
+
     
     
-    def get_contributor_lists(self,contributor_id):
-        """Get lists for specific contributor.
-        
-        Parameters
-        ----------
-        contributor_id: str, optional
-           numeric contributor id
-           
-        Returns
-        -------
-        pandas.DataFrame with columns
-        
-        list_id: int
-           the numeric ID of the list
-        list_name: str
-           the name of the list
-        """
-        
-        r = requests.get(f"{self.url}/api/contributor-lists/?contributors={contributor_id}",headers=self.header)
-        if r.ok:
-            data = json.loads(r.text)
-            self.result = {"code":0,"message":f"{r.status_code}"}
-        else:
-            data = []
-            self.result = {"code":-1,"message":f"{r.status_code}"}
-        self.contributors = data
-        
-        return pd.DataFrame(self.contributors,columns=["list_id","list_name"])
-        
-        pass
-    
-    
-    def get_facilities(self,page=-1,pageSize=-1,q="",name="",contributors=-1,lists=-1,contributor_types="",combine_contributors=False,
-                       countries="",boundary={},parent_company="",facility_type="",processing_type="",product_type="",number_of_workers="",
-                       native_language_name="",detail=False,sectors=""):
+    def get_facilities(self,page : int = -1, pageSize : int = -1, q : str = "", contributors : int = -1,
+                       lists : int = -1, contributor_types : str = "", countries : str = "",
+                       boundary : dict = {}, parent_company : str = "", facility_type : str = "",
+                       processing_type : str = "", product_type : str = "", number_of_workers : str = "",
+                       native_language_name : str = "", detail : bool =False, sectors : str = ""):
         """Returns a list of facilities in GeoJSON format for a given query. (Maximum of 50 facilities per page if the detail parameter is fale or not specified, 10 if the detail parameter is true.)
         
         Parameters
@@ -183,8 +277,6 @@ class OSH_API():
            Number of results to return per page.
         q : string, optional
            Facility Name or OS ID
-        name : string, optional
-           Facility Name (DEPRECATED; use `q` instead)
         contributors : integer, optional
            Contributor ID
         lists : integer, optional
@@ -193,8 +285,6 @@ class OSH_API():
            Contributor Type
         countries : string, optional
            Country Code
-        combine_contributors : string, optional
-           Set this to "AND" if the results should contain facilities associated with ALL the specified contributors.
         boundary : string, optional
            Pass a GeoJSON geometry to filter by facilities within the boundaries of that geometry.
         parent_company : string, optional
@@ -248,9 +338,6 @@ class OSH_API():
         if len(q) > 0:
             q = urllib.parse.quote_plus(q)
             parameters.append(f"q={q}")
-        if len(name) > 0:
-            name = urllib.parse.quote_plus(name)
-            parameters.append(f"name={name}")
         if contributors != -1:
             parameters.append(f"contributors={contributors}")
         if lists != -1:
@@ -261,8 +348,6 @@ class OSH_API():
         if len(countries) > 0:
             countries = urllib.parse.quote_plus(countries)
             parameters.append(f"countries={countries}")
-        if combine_contributors:
-            parameters.append(f"combine_contributors={combine_contributors}")
         if len(boundary.keys()) > 0:
             boundary = urllib.parse.quote_plus(str(boundary).replace(" ",""))
             parameters.append(f"boundary={boundary}")
@@ -493,7 +578,7 @@ class OSH_API():
         
         r = requests.get(f"{self.url}/api/workers-ranges/",headers=self.header)
         if r.ok:
-            workers_range = json.loads(r.text)
+            workers_ranges = json.loads(r.text)
             self.result = {"code":0,"message":f"{r.status_code}"}
             alldata = []
             for workers_range in workers_ranges:
