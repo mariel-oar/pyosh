@@ -27,7 +27,8 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'sphinxcontrib.plantuml',]
+    'sphinxcontrib.plantuml',   
+    'sphinx_copybutton',]
 
 templates_path = ['_templates']
 exclude_patterns = []

@@ -211,9 +211,9 @@ class OSH_API():
         pandas.DataFrame   
            +-----------------+---------------------------------+------+
            |column           | description                     | type |
-           +===========+=======================================+======+
+           +=================++================================+======+
            |contributor_type | The values of contributor types | str  |
-           +-----------+---------------------------------------+------+
+           +-----------------+---------------------------------+------+
         """
         
         self.last_api_call_epoch = time.time()
@@ -516,21 +516,32 @@ class OSH_API():
         return alldata
     
     
-    def post_facilities(self, data : dict = {}, name : str = "", address : str = "", country : str = "", sector : str ="",
+    def post_facilities(self, name : str = "", address : str = "", country : str = "", sector : str ="",
+                        data : dict = {}, 
                         number_of_workers : str = "",facility_type : str = "",
                         processing_type : str = "", product_type : str = "",
                         parent_company_name : str = "", native_language_name : str = "",
                         create : bool = False, public : bool = True, textonlyfallback : bool = False) -> pd.DataFrame:
-        """Add a single facility record
+        """Add a single facility record.
+
+        There are two ways supplying data, either via the ``name``, ``address``, ``country`` etc parameters,
+        or as a dict via the ``data`` parameters, in which case the optional parameters would need
+        to be the keys of the dictionary.
+
+
 
         Parameters
         ----------
-        data : dict, optional
-            _description_, by default {}
-        country_code : str, optional
+        name : str
+            Name of the facility
+        address : str
+            Complete address of the facility
+        country : str, optional
             _description_, by default ""
         sector : str, optional
             _description_, by default ""
+        data : dict, optional
+            _description_, by default {}
         number_of_workers : str, optional
             _description_, by default ""
         facility_type : str, optional

@@ -1,12 +1,12 @@
 Documentation
 =============
 
-#.. module:: pyosh.OSH_API
+.. comment module:: pyosh.OSH_API
 
 .. automodule:: pyosh
     :members: OSH_API
     :inherited-members:
 
-#.. autoclass:: pyosh.OSH_API
+.. comment autoclass:: pyosh.OSH_API
 
 

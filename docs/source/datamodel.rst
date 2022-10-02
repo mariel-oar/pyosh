@@ -13,7 +13,6 @@ JSON Schema
 ```````````
 
 .. code-block:: json
-   :linenos:
 
    {
      "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -39,7 +38,6 @@ JSON-LD
 ```````
 
 .. code-block:: json
-   :linenos:
 
    {
      "@context": {
@@ -49,8 +47,8 @@ JSON-LD
      }
    }
 
-Object Diagram
-``````````````
+Class Diagram
+`````````````
 
 .. uml:: 
    
