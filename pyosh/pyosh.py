@@ -10,6 +10,7 @@ import pandas as pd
 import urllib
 import time
 from typing import Union
+import io
 
 class OSH_API():
     """This is a class that wraps API access to https://opensupplyhub.org.
@@ -20,49 +21,66 @@ class OSH_API():
        URL of endpoint to use, defaults to https://opensupplyhub.org
     token: str, optional, default = ""
        Access token to authenticate to the API if not using any other method described in the `Authentication section <authentication.html>`_
+    path_to_env_yml: str, optional, default = ""
+       Path to yaml file containing access token and/or endpoint URL
+    url_to_env_yml: str, optional, default = ""
+       URL from where a text yaml file containing access token and/or endpoint URL can be downloaded
+       
+    Example .env file
+    -----------------
+       
+    .. code-block:: yaml
+       
+       OSH_URL: https://opensupplyhub.org
+       OSH_TOKEN: 12345abcdef12345abcdef12345abcdef
+       
     """
         
-    def __init__(self,url : str = "http://opensupplyhub.org",token : str = "",):
+    def __init__(self, url : str = "http://opensupplyhub.org", token : str = "", 
+                 path_to_env_yml : str = "", url_to_env_yml : str = ""):
         """object generation method"""
         result = {}
         self.header = {}
+        credentials = {}
+        
+        if len(path_to_env_yml) > 0:
+            with open(path_to_env_yml,"rt") as f:
+                credentials = yaml.load(f,yaml.Loader)
+        elif len(url_to_env_yml) > 0:
+            try:
+                r = requests.get(url_to_env_yml)
+                credentials = yaml.load(io.StringIO(r.text),yaml.Loader)
+            except:
+                pass
+        elif os.path.exists("./env.yml"):
+            try:
+                with open("./env.yml","rt") as f:
+                    credentials = yaml.load(f,yaml.Loader)
+            except:
+                pass
         
         if "OSH_URL" in os.environ.keys():
             self.url = os.environ["OSH_URL"]
+        elif "OSH_URL" in credentials.keys():
+            self.url = credentials["OSH_URL"]
         else:
             self.url = url
             
-        if token > "":
-            self.token = token
-        elif "OSH_TOKEN" in os.environ.keys():
+        if "OSH_TOKEN" in os.environ.keys():
             self.token = os.environ["OSH_TOKEN"]
-        elif os.path.exists("./env"):
-            with open("./env","rt") as f:
-                try:
-                    self.token = yaml.load(f,yaml.Loader)["token"]
-                except:
-                    self.result = {"code":-1,"message":"could not find entry token in file .env"}
-                    self.token = ""
-                    return 
-        elif os.path.exists("./env.yml"):
-            with open("./env.yml","rt") as f:
-                try:
-                    self.token = yaml.load(f,yaml.Loader)["token"]
-                except:
-                    self.result = {"code":-1,"message":"could not find entry token in file .env.yml"}
-                    self.token = ""
-                    return
+        elif "OSH_TOKEN" in credentials.keys():
+            self.token = credentials["OSH_TOKEN"]
         else:
-            self.result = {"code":-1,"message":"no valid token found"}
-            self.token = ""
-            return
+            self.token = token
+            
         self.result = {"code":0,"message":"ok"}
         
         self.header = {
             "accept": "application/json",
             "Authorization": f"Token {self.token}"
         }
-        
+        print(self.header)
+        print(self.url)
         
         self.last_api_call_epoch = -1
         self.last_api_call_duration = -1
@@ -688,10 +706,13 @@ class OSH_API():
         """
         
         self.last_api_call_epoch = time.time()
+        print(f"{self.url}/api/facilities/{osh_id}/")
+        print(self.header)
         r = requests.get(f"{self.url}/api/facilities/{osh_id}/",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             data = json.loads(r.text)
+            self.raw_result = data.copy()
             self.result = {"code":0,"message":f"{r.status_code}"}
             
             entry = {
@@ -715,14 +736,16 @@ class OSH_API():
                         for vv in v[kk]:
                             lines.append("|".join([f"{kkk}:{vvv}" for kkk,vvv in vv.items()]))
                         entry[f"{kk}_extended"] = "\n".join(lines).replace("lng:","lon:")
-                elif return_extended_fields:
+                elif not return_extended_fields:
                     pass
                 else:
                     entry[k] = v
-            data = pd.DataFrame(entry,index=[0])
+            #data = pd.DataFrame(entry,index=[0])
+            data = entry.copy()
             
         else:
-            data = pd.DataFrame()
+            #data = pd.DataFrame()
+            data = {}
             self.result = {"code":-1,"message":f"{r.status_code}"}
         
         return data
