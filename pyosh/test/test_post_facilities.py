@@ -13,25 +13,25 @@ osh_api = pyosh.OSH_API()
 def test_post_facilities_match():
     global osh_api
     result = osh_api.post_facilities(
-        name="Rudolf-Diesel Gymnasium",
+        name="Place A",
         country="DE",
-        address="Peterhofstraße 9, 86163 Augsburg"
+        address="Nowhere, 12345 Somewhere"
     )
 
 @pytest.mark.vcr()
 def test_post_facilities_potential_match():
     global osh_api
     result = osh_api.post_facilities(
-        name="Birkenau Grundschule",
+        name="Place B",
         country="DE",
-        address="Soldnerstraße 35, 86167 Augsburg"
+        address="Nowhere, 12346 Somewhere"
     )
 
 @pytest.mark.vcr()
 def test_post_facilities_new():
     global osh_api
     result = osh_api.post_facilities(
-        name="Deedeldee",
+        name="Place C",
         country="DE",
-        address="Linke Brandstr. 21, 86165 Augsburg"
+        address="Nowhere, 12347 Somewhere"
     )

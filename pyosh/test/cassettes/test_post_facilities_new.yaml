@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: name=Deedeldee&address=Linke+Brandstr.+21%2C+86165+Augsburg&country=DE&sector=Unspecified
+    body: name=Place+B&address=Nowhere%2C+12346+Somewhere&country=DE&sector=Unspecified
     headers:
       Accept-Encoding:
       - gzip, deflate

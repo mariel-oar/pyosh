@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: name=Rudolf-Diesel+Gymnasium&address=Peterhofstra%C3%9Fe+9%2C+86163+Augsburg&country=DE&sector=Unspecified
+    body: name=Place+A&address=Nowhere%2C+12345+Somewhere&country=DE&sector=Unspecified
     headers:
       Accept-Encoding:
       - gzip, deflate

@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: name=Birkenau+Grundschule&address=Soldnerstra%C3%9Fe+35%2C+86167+Augsburg&country=DE&sector=Unspecified
+    body: name=Place+C&address=Nowhere%2C+12347+Somewhere&country=DE&sector=Unspecified
     headers:
       Accept-Encoding:
       - gzip, deflate
