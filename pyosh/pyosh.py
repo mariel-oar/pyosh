@@ -136,7 +136,7 @@ class OSH_API():
     
     
     
-    def get_contributors(self) -> pd.DataFrame:
+    def get_contributors(self) -> list:
         """Get a list of contributors and their ID.
         
         Returns
@@ -172,7 +172,7 @@ class OSH_API():
         #return pd.DataFrame(self.contributors,columns=["contributor_id","contributor_name"])
     
     
-    def get_contributor_lists(self,contributor_id : Union[int,str]) -> pd.DataFrame:
+    def get_contributor_lists(self,contributor_id : Union[int,str]) -> list:
         """Get lists for specific contributor.
         
         Parameters
@@ -210,24 +210,51 @@ class OSH_API():
         #return pd.DataFrame(self.contributors,columns=["list_id","list_name"])
             
     
-    def get_contributor_embed_configs(self,contributor_id : Union[int,str]) -> pd.DataFrame:
+    def get_contributor_embed_configs(self,contributor_id : Union[int,str]) -> list:
         """Get embedded maps configuration for specific contributor.
+        
+        Embedded maps are a premium feature of Open Supply Hub which can be used to display a vendor/brand specific
+        map on any website via ``iframes``. This call returns a wealth of data, this documentation focuses on the key
+        aspects of the parameters.
         
         Parameters
         ----------
-        contributor_id: str
+        contributor_id: str or int
            numeric contributor id
            
         Returns
         -------
-        pandas.DataFrame   
-           +-----------+---------------------------------+------+
-           |column     | description                     | type |
-           +===========+=================================+======+
-           |list_id    | The numeric ID of the list      | int  |
-           +-----------+---------------------------------+------+
-           |list_name  | The name of the list            | str  |
-           +-----------+---------------------------------+------+
+        list(dict)
+           +-------------------------+---------------------------------------+--------+
+           |column                   | description                           | type   |
+           +=========================+=======================================+========+
+           |embedded_map_id          | The numeric ID of the embedded map    | int    |
+           +-------------------------+---------------------------------------+--------+
+           | width                   | The width of the map's iframe         | int    |
+           +-------------------------+---------------------------------------+--------+
+           | height                  | The height of the map's iframe        | int    |
+           +-------------------------+---------------------------------------+--------+
+           | color                   | The hex #RRGGBB color of the theme    | str    |
+           +-------------------------+---------------------------------------+--------+
+           | font                    | The font name used by the map         | int    |
+           +-------------------------+---------------------------------------+--------+
+           | contributor_name        | The contributor name                  | str    |
+           +-------------------------+---------------------------------------+--------+
+           | text_search_label       | The search label to be displayed      | str    |
+           +-------------------------+---------------------------------------+--------+
+           | map_style               | The map style                         | str    |
+           +-------------------------+---------------------------------------+--------+
+           | There will be a series of options specifying field visibility            |
+           | of extended fields                                                       |
+           +-------------------------+---------------------------------------+--------+
+           | *field* display_name    | The text to be displayed for *param*  | str    |
+           +-------------------------+---------------------------------------+--------+
+           | *field* tier_visible    | Flag indicating visibility            | bool   |
+           +-------------------------+---------------------------------------+--------+
+           | *field* tier_order      | Sequence number for *field*           | int    |
+           +-------------------------+---------------------------------------+--------+
+           | *field* tier_searchable | Flag indicating *field* is searchable | bool   |
+           +-------------------------+---------------------------------------+--------+
         """
         
         self.last_api_call_epoch = time.time()
@@ -256,7 +283,12 @@ class OSH_API():
                     for i in range(len(v)):
                         alldata[f'{k}_{i}'] = v[i]
                 else:
-                    alldata[k] = [v]
+                    if k == "id":
+                        alldata["embedded_map_id"] = v
+                    elif k == "contributor":
+                        alldata["contributor_id"] = v
+                    else:
+                        alldata[k] = v
             data = alldata
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
@@ -268,7 +300,7 @@ class OSH_API():
         
 
     
-    def get_contributor_types(self) -> pd.DataFrame:
+    def get_contributor_types(self) -> list:
         """Get a list of contributor type choices. The original REST API returns a list of pairs of values and display names.
         As all display names and values are identical, we only return the values used in the database.
         
@@ -287,22 +319,23 @@ class OSH_API():
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         
         if r.ok:
-            data = [value for value,display in json.loads(r.text)]
+            data = [{"contributor_type":value} for value,display in json.loads(r.text)]
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.contributors = data
         
-        return pd.DataFrame(self.contributors,columns=["contributor_type"])
+        return data
+        #return pd.DataFrame(self.contributors,columns=["contributor_type"])
     
     
-    def get_countries(self) -> pd.DataFrame:
+    def get_countries(self) -> list:
         """Get a list of `ISO 3166-2 Alpha 2 country codes and English short names <https://www.iso.org/obp/ui/#search>` used. 
         
         Returns
         -------
-        pandas.DataFrame   
+        list(dict)
            +-----------+---------------------------------+------+
            |column     | description                     | type |
            +===========+=================================+======+
@@ -316,14 +349,16 @@ class OSH_API():
         r = requests.get(f"{self.url}/api/countries",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
-            data = json.loads(r.text)
+            raw_data = json.loads(r.text)
+            data = [{"iso_3166_2":cid,"country":con} for cid,con in raw_data]
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.countries = data
 
-        return pd.DataFrame(self.countries,columns=["iso_3166_2","country"])
+        return data
+        #return pd.DataFrame(self.countries,columns=["iso_3166_2","country"])
             
         
     def get_countries_active_count(self) -> int:
@@ -354,7 +389,7 @@ class OSH_API():
                        lists : int = -1, contributor_types : str = "", countries : str = "",
                        boundary : dict = {}, parent_company : str = "", facility_type : str = "",
                        processing_type : str = "", product_type : str = "", number_of_workers : str = "",
-                       native_language_name : str = "", detail : bool =False, sectors : str = ""):
+                       native_language_name : str = "", detail : bool =False, sectors : str = "") -> list:
         """Returns a list of facilities in GeoJSON format for a given query. (Maximum of 50 facilities per page if the detail parameter is fale or not specified, 10 if the detail parameter is true.)
         
         Parameters
@@ -394,37 +429,77 @@ class OSH_API():
            
         Returns
         -------
-        pandas.DataFrame
+        list(dict)
 
-            +------------------+-----------------------------------------------+-------+
-            |column            | description                                   | type  |
-            +==================+===============================================+=======+
-            |os_id             | The OS ID                                     | str   |
-            +------------------+-----------------------------------------------+-------+
-            |lon               | Geographics longitude in degrees              | float |
-            +------------------+-----------------------------------------------+-------+
-            |lat               | Geographics latitude in degrees               | float |
-            +------------------+-----------------------------------------------+-------+
-            |name              | Facility name                                 | str   |
-            +------------------+-----------------------------------------------+-------+
-            |address           | Facility address                              | str   |
-            +------------------+-----------------------------------------------+-------+
-            |country_code      |`ISO 3166-2 Alpha country code                 | str   |
-            |                  |<https://iso.org/obp/ui/#search/code/>`_       |       |
-            +------------------+-----------------------------------------------+-------+
-            |country_name      |`ISO 3166 country name                         | str   |
-            |                  |<https://iso.org/obp/ui/#search/code/>`_       |       |
-            +------------------+-----------------------------------------------+-------+
-            |address           | Facility address                              | str   |
-            +------------------+-----------------------------------------------+-------+
-            |has_approved_claim| Flag indicating if facility has been claimed  | bool  |
-            |                  |                                               |       |
-            |                  | by owner, manager, or other authorised person |       |
-            +------------------+-----------------------------------------------+-------+
-            |is_closed         | Flag indicating if facility has been closed   | bool  |
-            |                  |                                               |       |
-            |                  | (*True*), or is currently open (*False*)      |       |
-            +------------------+-----------------------------------------------+-------+
+            +-------------------------------+-----------------------------------------------+-------+
+            |column                         | description                                   | type  |
+            +===============================+===============================================+=======+
+            |os_id                          | The OS ID                                     | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |lon                            | Geographics longitude in degrees              | float |
+            +-------------------------------+-----------------------------------------------+-------+
+            |lat                            | Geographics latitude in degrees               | float |
+            +-------------------------------+-----------------------------------------------+-------+
+            |name                           | Facility name                                 | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |address                        | Facility address                              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |country_code                   |`ISO 3166-2 Alpha country code                 | str   |
+            |                               |<https://iso.org/obp/ui/#search/code/>`_       |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            |country_name                   |`ISO 3166 country name                         | str   |
+            |                               |<https://iso.org/obp/ui/#search/code/>`_       |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            |address                        | Facility address                              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |has_approved_claim             | Flag indicating if facility has been claimed  | bool  |
+            |                               |                                               |       |
+            |                               | by owner, manager, or other authorised person |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            |is_closed                      | Flag indicating if facility has been closed   | bool  |
+            |                               |                                               |       |
+            |                               | (*True*), or is currently open (*False*)      |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            | Additional fields returned when *detail=True*                                         |
+            +-------------------------------+-----------------------------------------------+-------+
+            | other_names                   | Other names provided, joined with ``|``       | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | other_addresses               | Other facility addresses, joined with ``|``   | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | contributors                  | ``|`` joined contributors who provided data   | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | claim_info                    | Who claimed the facility                      | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | other_locations               |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | is_closed                     | Flag indicating facility no longer active     | bool  |
+            +-------------------------------+-----------------------------------------------+-------+
+            | activity_reports              |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | contributor_fields            |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | has_inexact_coordinates       | Misnomer: Geocoordinates manually entered     | bool  |
+            +-------------------------------+-----------------------------------------------+-------+
+            | name_extended                 |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | address_extended              |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | number_of_workers_extended    | Text indicating size of facility              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | native_language_name_extended | Name of native facility language              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | facility_type_extended        | Type of facility, e.g. *"Office / HQ*         | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | processing_type_extended      | Type of processing, e.g. *Packaging*          | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | product_type_extended         | Product type, e.g. *Radios*                   | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | parent_company_extended       | Name of Parent Company                        | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | created_from                  | Information about first recored creating entry| str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | sector                        | Business sector                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
         """
         
         parameters = []
@@ -494,7 +569,7 @@ class OSH_API():
                         "lat":entry["geometry"]["coordinates"][1],
                     }
                     for k,v in entry["properties"].items():
-                        if not k.startswith("ppe_"):
+                        if not k.startswith("ppe_") and not k == "new_os_id":
                             new_entry[k] = v
                     alldata.append(new_entry)
                     
@@ -504,15 +579,19 @@ class OSH_API():
                 else:
                     have_next = False
             else:
-                data = []
+                alldata = []
                 self.result = {"code":-1,"message":f"{r.status_code}"}
                 have_next = False
         
-        return pd.DataFrame(alldata)
+        return alldata
+        #return pd.DataFrame(alldata)
     
     
     def _flatten_facilities_json(self,json_data):
-        """Convert deep facility data to a flat key,value dict"""
+        """Convert deep facility data to a flat key,value dict.
+        
+        Internal use only.
+        """
         base_entry = {}
         for k,v in json_data.items():
             if k == "matches":
@@ -587,7 +666,7 @@ class OSH_API():
                         number_of_workers : str = "",facility_type : str = "",
                         processing_type : str = "", product_type : str = "",
                         parent_company_name : str = "", native_language_name : str = "",
-                        create : bool = False, public : bool = True, textonlyfallback : bool = False) -> pd.DataFrame:
+                        create : bool = False, public : bool = True, textonlyfallback : bool = False) -> list:
         """Add a single facility record.
 
         There are two ways supplying data, either via the ``name``, ``address``, ``country`` etc parameters,
@@ -698,26 +777,30 @@ class OSH_API():
         r = requests.post(f"{self.url}/api/facilities/?{parameters}",headers=self.header,data=payload)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
-            data = json.loads(r.text)
-            data = self._flatten_facilities_json(data)
+            raw_data = json.loads(r.text)
+            data = self._flatten_facilities_json(raw_data)
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
-            data = pd.DataFrame({"status":"HTTP_ERROR"})
+            data = {"status":"HTTP_ERROR"}
             self.result = {"code":-1,"message":f"{r.status_code}"}    
                 
-        return pd.DataFrame(data)
+        return data
+        #return pd.DataFrame(data)
     
     
     
-    
-    def post_facilities_bulk(self, records : list = [], dataframe : pd.DataFrame = pd.DataFrame([])) -> pd.DataFrame:
-        """Add multiple records
+    def post_facilities_bulk(self, records : list = [], ) -> list:
+        """Add multiple records at once.
+        
         """
         return
     
     
-    def get_facilities_count(self):
-        """/facilities/count/
+    def get_facilities_count(self) -> int:
+        """Return the number of facilities in the database.
+        
+        There will be more than one record per facility in general, so this is not the amount of data
+        in the Open Supply Hub database, but the number of facilities with associated records.
         
         Returns
         -------
@@ -739,18 +822,87 @@ class OSH_API():
         return data
     
     
-    def get_facility(self,osh_id : str, return_extended_fields : bool = False ):
-        """/facilities/{id}/
+    def get_facility(self,osh_id : str, return_extended_fields : bool = False ) -> dict:
+        """Return detail on one facility
         
         Parameters
         ----------
         osh_id: str
            sixteen character OS ID
-        
+           
         Returns
         -------
-        active_count: int
-           disctinct country codes used by active facilities
+        list(dict)
+
+            +-------------------------------+-----------------------------------------------+-------+
+            |column                         | description                                   | type  |
+            +===============================+===============================================+=======+
+            |os_id                          | The OS ID                                     | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |lon                            | Geographics longitude in degrees              | float |
+            +-------------------------------+-----------------------------------------------+-------+
+            |lat                            | Geographics latitude in degrees               | float |
+            +-------------------------------+-----------------------------------------------+-------+
+            |name                           | Facility name                                 | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |address                        | Facility address                              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |country_code                   |`ISO 3166-2 Alpha country code                 | str   |
+            |                               |<https://iso.org/obp/ui/#search/code/>`_       |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            |country_name                   |`ISO 3166 country name                         | str   |
+            |                               |<https://iso.org/obp/ui/#search/code/>`_       |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            |address                        | Facility address                              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            |has_approved_claim             | Flag indicating if facility has been claimed  | bool  |
+            |                               |                                               |       |
+            |                               | by owner, manager, or other authorised person |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            |is_closed                      | Flag indicating if facility has been closed   | bool  |
+            |                               |                                               |       |
+            |                               | (*True*), or is currently open (*False*)      |       |
+            +-------------------------------+-----------------------------------------------+-------+
+            | Additional fields returned when *return_extended_fields=True*                         |
+            +-------------------------------+-----------------------------------------------+-------+
+            | other_names                   | Other names provided, joined with ``|``       | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | other_addresses               | Other facility addresses, joined with ``|``   | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | contributors                  | ``|`` joined contributors who provided data   | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | claim_info                    | Who claimed the facility                      | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | other_locations               |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | is_closed                     | Flag indicating facility no longer active     | bool  |
+            +-------------------------------+-----------------------------------------------+-------+
+            | activity_reports              |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | contributor_fields            |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | has_inexact_coordinates       | Misnomer: Geocoordinates manually entered     | bool  |
+            +-------------------------------+-----------------------------------------------+-------+
+            | name_extended                 |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | address_extended              |                                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | number_of_workers_extended    | Text indicating size of facility              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | native_language_name_extended | Name of native facility language              | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | facility_type_extended        | Type of facility, e.g. *"Office / HQ*         | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | processing_type_extended      | Type of processing, e.g. *Packaging*          | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | product_type_extended         | Product type, e.g. *Radios*                   | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | parent_company_extended       | Name of Parent Company                        | str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | created_from                  | Information about first recored creating entry| str   |
+            +-------------------------------+-----------------------------------------------+-------+
+            | sector                        | Business sector                               | str   |
+            +-------------------------------+-----------------------------------------------+-------+
         """
         
         self.last_api_call_epoch = time.time()
@@ -768,7 +920,7 @@ class OSH_API():
                 "lat": data["geometry"]["coordinates"][1]
             }
             for k,v in data["properties"].items():
-                if k.startswith("ppe_"):
+                if k.startswith("ppe_") or k == "new_os_id":
                     continue
                 elif isinstance(v,list):
                     if len(v) > 0 and isinstance(v[0],dict):
@@ -806,13 +958,19 @@ class OSH_API():
         return data
     
     
-    def get_facility_processing_types(self):
-        """/facility-processing-types/
+    def get_facility_processing_types(self) -> list:
+        """Return a list of defined facility and associated processing types
         
         Returns
         -------
-        facility_processing_types: list
-           something
+        list(dict)
+           +-----------------+-----------------------------------------------------+------+
+           |column           | description                                         | type |
+           +=================+=====================================================+======+
+           |facility_type    | A defined facility type, *"Office / HQ*             | str  |
+           +-----------------+-----------------------------------------------------+------+
+           |processing_type  | Processing, e.g. *Packaging*, for the facility type | str  |
+           +-----------------+-----------------------------------------------------+------+
         """
         
         self.last_api_call_epoch = time.time()
@@ -828,9 +986,9 @@ class OSH_API():
                         "facility_type":facility_processing_type["facilityType"],
                         "processing_type":processingType
                     })
-            data = pd.DataFrame(alldata)
+            data = alldata
         else:
-            data = pd.DataFrame(alldata)
+            data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
             
         self.facility_processing_types = data

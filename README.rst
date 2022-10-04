@@ -2,7 +2,12 @@ pyosh, A Python libarary for the OSH API
 ===========================================
 
 This repository contains a python library to access the 
-`Open Supply Hub <https://opensupplyhub.org>`_ API.
+`Open Supply Hub <https://opensupplyhub.org>`_ API using python.
+
+.. important::
+    The library and this documentation are in constant development until we have reached a stable
+    status and release version 1.x
+    
 
 How it Works
 ------------
