@@ -28,7 +28,9 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinxcontrib.plantuml',   
-    'sphinx_copybutton',]
+    'sphinx_copybutton',
+    #'numpydoc'
+    ]
 
 templates_path = ['_templates']
 exclude_patterns = []
@@ -48,3 +50,13 @@ autodoc_mock_imports = ['requests', 'pyyaml', 'pandas','yaml']
 
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
+
+#autoclass_content = 'both'
+
+autodoc_default_options = {
+    'members': True,
+    #'member-order': 'bysource',
+    'special-members': '__init__',
+    'undoc-members': True,
+    'exclude-members': '_flatten_facilities_json'
+}
