@@ -19,3 +19,6 @@ classifiers = [
 # "OpenAPI" = "https://opensupplyhub.org/api/docs"
 "Github" = "https://github.com/KlausGPaul/pyosh"
 "Bug Tracker" = "https://github.com/KlausGPaul/pyosh/issues"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}

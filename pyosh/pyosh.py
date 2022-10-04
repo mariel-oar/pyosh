@@ -14,31 +14,37 @@ import io
 
 class OSH_API():
     """This is a class that wraps API access to https://opensupplyhub.org.
-
-    Parameters
-    ----------
-    url: str, optional, default = "http://opensupplyhub.org"
-       URL of endpoint to use, defaults to https://opensupplyhub.org
-    token: str, optional, default = ""
-       Access token to authenticate to the API if not using any other method described in the `Authentication section <authentication.html>`_
-    path_to_env_yml: str, optional, default = ""
-       Path to yaml file containing access token and/or endpoint URL
-    url_to_env_yml: str, optional, default = ""
-       URL from where a text yaml file containing access token and/or endpoint URL can be downloaded
        
-    Example .env file
-    -----------------
-       
-    .. code-block:: yaml
-       
-       OSH_URL: https://opensupplyhub.org
-       OSH_TOKEN: 12345abcdef12345abcdef12345abcdef
+        Example
+        -------
+        This is an example of a yaml configuration file which supplies a valid API endpoint URL, and an API token.
+                
+        .. code-block:: 
+            
+            OSH_URL: https://opensupplyhub.org
+            OSH_TOKEN: 12345abcdef12345abcdef12345abcdef
        
     """
         
     def __init__(self, url : str = "http://opensupplyhub.org", token : str = "", 
-                 path_to_env_yml : str = "", url_to_env_yml : str = ""):
-        """object generation method"""
+                 path_to_env_yml : str = "", url_to_env_yml : str = "", 
+                 check_token = False):
+        """object generation method
+        
+        Parameters
+        ----------
+        url: str, optional, default = "http://opensupplyhub.org"
+            URL of endpoint to use, defaults to https://opensupplyhub.org
+        token: str, optional, default = ""
+            Access token to authenticate to the API if not using any other method described in the `Authentication section <authentication.html>`_
+        path_to_env_yml: str, optional, default = ""
+            Path to yaml file containing access token and/or endpoint URL
+        url_to_env_yml: str, optional, default = ""
+            URL from where a text yaml file containing access token and/or endpoint URL can be downloaded
+        check_token: bool, optional, default = False
+            Whether to check API token validity during initialisation. Note this will cost one API call count.
+
+        """
         result = {}
         self.header = {}
         credentials = {}
@@ -81,6 +87,7 @@ class OSH_API():
         
         self.last_api_call_epoch = -1
         self.last_api_call_duration = -1
+        self.api_call_count = 0
         self.countries = []
         self.countries_active_count = -1
         self.contributors = []
@@ -102,26 +109,28 @@ class OSH_API():
             return
         
         # Check header/token validity
-        try:
-            r = requests.get(f"{self.url}/api/facilities/count/",headers=self.header)
-            if not r.ok:
-                self.result = {"code":r.status_code,"message":str(r)}
-                self.error = True
-            else:
-                # Check everything is working
-                try:
-                    facilites_count_json = json.loads(r.text)
-                    facilites_count = facilites_count_json["count"]
-                    self.result = {"code":0,"message":"ok"}
-                    self.error = False
-                except Exception as e:
-                    self.result = {"code":-1,"message":"JSON error: "+str(e)}
+        if check_token:
+            try:
+                r = requests.get(f"{self.url}/api/facilities/count/",headers=self.header)
+                self.api_call_count += 1
+                if not r.ok:
+                    self.result = {"code":r.status_code,"message":str(r)}
                     self.error = True
-                    return
-        except Exception as e:
-            self.result = {"code":-1,"message":str(e)}
-            self.error = True
-            return
+                else:
+                    # Check everything is working
+                    try:
+                        facilites_count_json = json.loads(r.text)
+                        facilites_count = facilites_count_json["count"]
+                        self.result = {"code":0,"message":"ok"}
+                        self.error = False
+                    except Exception as e:
+                        self.result = {"code":-1,"message":"JSON error: "+str(e)}
+                        self.error = True
+                        return
+            except Exception as e:
+                self.result = {"code":-1,"message":str(e)}
+                self.error = True
+                return
         
         return 
     
@@ -148,6 +157,7 @@ class OSH_API():
         self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/contributors",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
+        self.api_call_count += 1
 
         if r.ok:
             raw_data = json.loads(r.text)
@@ -185,6 +195,7 @@ class OSH_API():
 
         self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/contributor-lists/?contributors={contributor_id}",headers=self.header)
+        self.api_call_count += 1
 
         if r.ok:
             raw_data = json.loads(r.text)
