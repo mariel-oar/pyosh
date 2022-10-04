@@ -72,15 +72,12 @@ class OSH_API():
             self.token = credentials["OSH_TOKEN"]
         else:
             self.token = token
-            
-        self.result = {"code":0,"message":"ok"}
+         
         
         self.header = {
             "accept": "application/json",
             "Authorization": f"Token {self.token}"
         }
-        print(self.header)
-        print(self.url)
         
         self.last_api_call_epoch = -1
         self.last_api_call_duration = -1
@@ -93,6 +90,38 @@ class OSH_API():
             "POTENTIAL_MATCH":0,
             "ERROR_MATCHING":-1
         }
+           
+        # Check valid URL
+        try:
+            r = requests.get(f"{self.url}/health-check/",timeout=5)
+            self.result = {"code":0,"message":"ok"}
+            self.error = False
+        except Exception as e:
+            self.result = {"code":-1,"message":str(e)}
+            self.error = True
+            return
+        
+        # Check header/token validity
+        try:
+            r = requests.get(f"{self.url}/api/facilities/count/",headers=self.header)
+            if not r.ok:
+                self.result = {"code":r.status_code,"message":str(r)}
+                self.error = True
+            else:
+                # Check everything is working
+                try:
+                    facilites_count_json = json.loads(r.text)
+                    facilites_count = facilites_count_json["count"]
+                    self.result = {"code":0,"message":"ok"}
+                    self.error = False
+                except Exception as e:
+                    self.result = {"code":-1,"message":"JSON error: "+str(e)}
+                    self.error = True
+                    return
+        except Exception as e:
+            self.result = {"code":-1,"message":str(e)}
+            self.error = True
+            return
         
         return 
     
@@ -103,14 +132,17 @@ class OSH_API():
         
         Returns
         -------
-        pandas.DataFrame   
-           +-----------+---------------------------------+------+
-           |column     | description                     | type |
-           +===========+=================================+======+
-           |list_id    | The numeric ID of the list      | int  |
-           +-----------+---------------------------------+------+
-           |list_name  | The name of the list            | str  |
-           +-----------+---------------------------------+------+
+        list(dict()) 
+        
+           A list of dictionaries.
+        
+           +-----------------+-----------------------------------+------+
+           |column           | description                       | type |
+           +=================+===================================+======+
+           |contributor_id   | The numeric ID of the contributor | int  |
+           +-----------------+-----------------------------------+------+
+           |contributor_name | The name of the contributor       | str  |
+           +-----------------+-----------------------------------+------+
         """
         
         self.last_api_call_epoch = time.time()
@@ -118,14 +150,16 @@ class OSH_API():
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
 
         if r.ok:
-            data = json.loads(r.text)
+            raw_data = json.loads(r.text)
+            data = [{"contributor_id":cid,"contributor_name":con} for cid,con in raw_data]
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.contributors = data
         
-        return pd.DataFrame(self.contributors,columns=["contributor_id","contributor_name"])
+        return data
+        #return pd.DataFrame(self.contributors,columns=["contributor_id","contributor_name"])
     
     
     def get_contributor_lists(self,contributor_id : Union[int,str]) -> pd.DataFrame:
@@ -153,14 +187,16 @@ class OSH_API():
         r = requests.get(f"{self.url}/api/contributor-lists/?contributors={contributor_id}",headers=self.header)
 
         if r.ok:
-            data = json.loads(r.text)
+            raw_data = json.loads(r.text)
+            data = [{"list_id":cid,"list_name":con} for cid,con in raw_data]
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.contributors = data
         
-        return pd.DataFrame(self.contributors,columns=["list_id","list_name"])
+        return data
+        #return pd.DataFrame(self.contributors,columns=["list_id","list_name"])
             
     
     def get_contributor_embed_configs(self,contributor_id : Union[int,str]) -> pd.DataFrame:
@@ -216,7 +252,8 @@ class OSH_API():
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         
-        return pd.DataFrame(data)
+        return data
+        #return pd.DataFrame(data)
         
 
     
@@ -707,7 +744,6 @@ class OSH_API():
         
         self.last_api_call_epoch = time.time()
         print(f"{self.url}/api/facilities/{osh_id}/")
-        print(self.header)
         r = requests.get(f"{self.url}/api/facilities/{osh_id}/",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
@@ -733,13 +769,21 @@ class OSH_API():
                         entry[k] = "\n".join(v)
                 elif k == "extended_fields" and return_extended_fields:
                     for kk in v.keys():
+                        lines = []
                         for vv in v[kk]:
                             lines.append("|".join([f"{kkk}:{vvv}" for kkk,vvv in vv.items()]))
                         entry[f"{kk}_extended"] = "\n".join(lines).replace("lng:","lon:")
-                elif not return_extended_fields:
+                    #self.v = v.copy()
+                elif k == "created_from":
+                    self.v = v.copy()
+                    entry[k] = "|".join([f"{kkk}:{vvv}" for kkk,vvv in v.items()]) 
+                elif k == "extended_fields" and not return_extended_fields:
                     pass
                 else:
-                    entry[k] = v
+                    if v is not None:
+                        entry[k] = v
+                    else:
+                        entry[k] = ""
             #data = pd.DataFrame(entry,index=[0])
             data = entry.copy()
             
