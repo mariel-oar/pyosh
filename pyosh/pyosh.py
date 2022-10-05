@@ -1,4 +1,4 @@
-"""pyosh Package for accessing the https://opensupplyhub.org API using python"""
+"""pyosh is a Package for accessing the `Open Supply Hub API <https://opensupplyhub.org/api/docs>`_ using python."""
 
 __version__ = "0.1.0"
 
@@ -174,6 +174,12 @@ class OSH_API():
     
     def get_contributor_lists(self,contributor_id : Union[int,str]) -> list:
         """Get lists for specific contributor.
+        
+        For interactive uploads, data are organised along the notion of lists. Suppliers often publish
+        their supplier's lists on their websites, together with a name or identification relating to
+        the point in time the list relates to.
+        
+        As an example, a list may be called '*brand* Public Supplier List 2021' .
         
         Parameters
         ----------
@@ -385,19 +391,21 @@ class OSH_API():
 
     
     
-    def get_facilities(self,page : int = -1, pageSize : int = -1, q : str = "", contributors : int = -1,
+    def get_facilities(self, q : str = "", contributors : int = -1,
                        lists : int = -1, contributor_types : str = "", countries : str = "",
                        boundary : dict = {}, parent_company : str = "", facility_type : str = "",
                        processing_type : str = "", product_type : str = "", number_of_workers : str = "",
-                       native_language_name : str = "", detail : bool =False, sectors : str = "") -> list:
+                       native_language_name : str = "", detail : bool =False, sectors : str = "",
+                       page : int = -1, pageSize : int = -1,) -> list:
         """Returns a list of facilities in GeoJSON format for a given query. (Maximum of 50 facilities per page if the detail parameter is fale or not specified, 10 if the detail parameter is true.)
+        
+        .. attention::
+          Rate limits and possibly list size limitations may effect the returned values. This call
+          is intended to be used in conjunction with a search filter.
+         
         
         Parameters
         ----------
-        page : integer, optional
-           A page number within the paginated result set.
-        pageSize : integer, optional
-           Number of results to return per page.
         q : string, optional
            Facility Name or OS ID
         contributors : integer, optional
@@ -426,6 +434,10 @@ class OSH_API():
            Set this to true to return additional detail about contributors and extended fields with each result. setting this to true will make the response significantly slower to return.
         sectors : string, optional
            The sectors that this facility belongs to. Values must match those returned from the `GET /api/sectors` endpoint
+        page : integer, optional
+           A page number within the paginated result set.
+        pageSize : integer, optional
+           Number of results to return per page.
            
         Returns
         -------
@@ -617,7 +629,9 @@ class OSH_API():
                 new_data.update(base_entry)#.copy()
                 for k,v in match.items():
                     if isinstance(v,list):
-                        a = 1/0
+                        raise NotImplementedError("Internal _flatten_facilities_json. Facilities data structure must have changed. "
+                                                  "Instance 1/2. "
+                                                  "Please report on github and/or check for an updated library.")
                         pass
                     elif k in ["Feature","type"]:
                         pass
@@ -643,17 +657,28 @@ class OSH_API():
                                         elif isinstance(entry,str):
                                             lines = [vvv]
                                         else:
-                                            a = 1/0
+                                            raise NotImplementedError("Internal _flatten_facilities_json. Facilities data structure must have changed. "
+                                                                      "Instance 2/2. "
+                                                                      "Please report on github and/or check for an updated library.")
                                     new_data[f"match_{kk}_{kkk}"] = "\n".join(lines).replace("lng:","lon:")
                                 pass
                             elif kk.startswith("ppe_"):
                                 continue
                             else:
-                                new_data[f"match_{kk}"] = vv
+                                new_data[f"match_{kk}"] = "" if vv is None else vv
                         pass
                     else:
-                        new_data[f"match_{k}"] = v
-                alldata.append(new_data)
+                        new_data[f"match_{k}"] = "" if v is None else v
+
+                # shorten names of dictionary keys
+                new_data_keys_shortened = {}
+                for k,v in new_data.items():
+                    if "match_extended_fields_" in k:
+                        new_data_keys_shortened[k.replace("match_extended_fields_","match_ef_")] = v
+                    else:
+                        new_data_keys_shortened[k] = v
+                        
+                alldata.append(new_data_keys_shortened)
                 match_no += 1
         else:
             alldata.append(base_entry)
@@ -673,6 +698,30 @@ class OSH_API():
         or as a dict via the ``data`` parameters, in which case the optional parameters would need
         to be the keys of the dictionary.
 
+        Uploading a record may create a new entry, return a previously matched entry, or require you to make
+        a confirm/reject selection by calling one of two corresponding API endpoints.
+         
+        .. uml::
+        
+          @startuml
+
+          (*) --> "ingest data"
+          "ingest data"  --> "sector/product types"
+          "sector/product types" --> "dedupe entry"
+
+          "dedupe entry" --> "MATCHED"
+          "dedupe entry" --> "NEW_FACILITY"
+          "dedupe entry" --> "POTENTIAL_MATCH"
+          "dedupe entry" --> "ERROR_MATCHING"
+
+          "POTENTIAL_MATCH" --> "confirm/reject endpoints"
+
+          "MATCHED" -->[existing os_id] (*)
+          "NEW_FACILITY" -->[new os_id] (*)
+          "confirm/reject endpoints" -->[second call required] (*)
+          "ERROR_MATCHING" -->[record invalid] (*)
+          
+          @enduml
 
 
         Parameters
@@ -708,7 +757,91 @@ class OSH_API():
 
         Returns
         -------
-        something
+        list(dict)
+
+            +--------------------------------+------------------------------------------+-------+
+            | fieldname                      | description                              | type  |
+            +================================+==========================================+=======+
+            | match_no                       | Running number of match found            | int   |
+            +--------------------------------+------------------------------------------+-------+
+            | item_id                        | Internal reference                       | int   |
+            +--------------------------------+------------------------------------------+-------+
+            | lon                            | Geographic longitude in degrees          | float |
+            +--------------------------------+------------------------------------------+-------+
+            | lat                            | Geographic latitude in degrees           | float |
+            +--------------------------------+------------------------------------------+-------+
+            | geocoded_address               | Address returned from geocoder           | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | status                         | One of ``MATCHED``, ``NEW_FACILITY``,    | str   |
+            |                                |                                          |       |
+            |                                | ``POTENTIAL_MATCH``, or ``ERROR``        |       |
+            +--------------------------------+------------------------------------------+-------+
+            | os_id                          | The OS ID                                | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_id                       | The OS ID of the match                   | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_lon                      | Geographic longitude of match            | float |
+            +--------------------------------+------------------------------------------+-------+
+            | match_lat                      | Geographic latitude of match             | float |
+            +--------------------------------+------------------------------------------+-------+
+            | match_name                     | Facility name of match                   | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_address                  | Address of match                         | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_country_code             |Match `ISO 3166-2 ountry code             | str   |
+            |                                |<https://iso.org/obp/ui/#search/code/>`_  |       |
+            +--------------------------------+------------------------------------------+-------+
+            | match_os_id                    | The OS ID of the match                   | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_other_names              | Other names found for match              | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_other_addresses          | Other addresses found for match          | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_contributors             | Contributors providing match             | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_country_name             |Match `ISO 3166 country name              | str   |
+            |                                |<https://iso.org/obp/ui/#search/code/>`_  |       |
+            +--------------------------------+------------------------------------------+-------+
+            | match_claim_info               | Claim information of match               | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_other_locations          |                                          | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_is_closed                | Flag indicating if match was closed      | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_activity_reports         |                                          | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_contributor_fields       |                                          | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_new_os_id                |                                          | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_has_inexact_coordinates  | Misnomer: Geocoordinates manually        | bool  |
+            |                                |                                          |       |
+            |                                | entered for match                        |       |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_name                  | Match extended field name                | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_address               | Extended field address of match          | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_number_of_workers     | Extended field number of workers of      | str   |
+            |                                |                                          |       |
+            |                                | match                                    |       |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_native_language_name  | Native facility language of match        | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_facility_type         | Facility type of match                   | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_processing_type       | Processing type of match                 | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_product_type          | Product type of match                    | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_ef_parent_company        | Parent company of match                  | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_created_from_created_at  | Timestamp match was created              | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_created_from_contributor | Contributor name who created match       | str   |
+            +--------------------------------+------------------------------------------+-------+
+            | match_sector                   | Sector assignment of match               | str   |
+            +--------------------------------+------------------------------------------+-------+
         """
         if len(data) == 0:
             payload = {}
@@ -791,6 +924,9 @@ class OSH_API():
     
     def post_facilities_bulk(self, records : list = [], ) -> list:
         """Add multiple records at once.
+        
+        .. attention::
+          This function will become available at a later stage
         
         """
         return
@@ -906,7 +1042,7 @@ class OSH_API():
         """
         
         self.last_api_call_epoch = time.time()
-        print(f"{self.url}/api/facilities/{osh_id}/")
+        
         r = requests.get(f"{self.url}/api/facilities/{osh_id}/",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
@@ -995,67 +1131,130 @@ class OSH_API():
         return data    
     
        
-    def get_parent_companies(self):
-        """/api/product-types/"""
+    def get_parent_companies(self) -> list:
+        """Returns a list of parent companies and either contributor ID of contributor name.
+        
+        .. note::
+          This API call is likely to be retired and possibly replaced with a more user friendly
+          version.
+        
+        Returns
+        -------
+        list(dict)
+           +------------------+----------------------------------------------------+-------------+
+           |column            | description                                        | type        |
+           +==================+====================================================+=============+
+           |key_or_contributor| Numeric key, or name of contributor                | str or int  |
+           +------------------+----------------------------------------------------+-------------+
+           |parent_company    | Name of parent company as uploaded to the database | str         |
+           +------------------+----------------------------------------------------+-------------+
+        """
         
         self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/parent-companies/",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
-            data = json.loads(r.text)
+            raw_data = json.loads(r.text)
+            data = [{"key_or_contributor":k,"parent_company":p} for k,p in raw_data]
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.parent_companies = data
 
-        return pd.DataFrame(self.parent_companies,columns=["key_or_something","parent_company"])
+        return data
+        #return pd.DataFrame(self.parent_companies,columns=["key_or_something","parent_company"])
     
        
-    def get_product_types(self):
-        """/api/product-types/"""
+    def get_product_types(self) -> list:
+        """Returns a list of product types specified in the database
+        
+        Returns
+        -------
+        list(dict)
+           +-----------------+-----------------------------------------------------+------+
+           |column           | description                                         | type |
+           +=================+=====================================================+======+
+           |product_type     | Name of product type as uploaded to the database    | str  |
+           +-----------------+-----------------------------------------------------+------+
+        """
         
         self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/product-types/",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
-            data = json.loads(r.text)
+            raw_data = json.loads(r.text)
+            data = [{"product_type":sector} for sector in raw_data]
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.product_types = data
 
-        return pd.DataFrame(self.product_types,columns=["product_type"])
+        return data
+        #return pd.DataFrame(self.product_types,columns=["product_type"])
         
     
        
-    def get_sectors(self):
-        """/api/sectors/"""
+    def get_sectors(self) -> int:
+        """Returns a list of sectors defined at the time of import.
+        
+        The sectors list is assumed to evolve over time as we better understand how to structure our data and
+        how our database is being used. Upon ingestion of data, the logic tries to match an entry specified 
+        in the sector field to the sector list values. If a match is found, the sector value will be
+        used. If no match is found, the sector value will be set to ``Unspecified``.
+        
+        Returns
+        -------
+        list(dict)
+           +-----------------+-----------------------------------------------------+------+
+           |column           | description                                         | type |
+           +=================+=====================================================+======+
+           |sector           | Name of sector defined in the database              | str  |
+           +-----------------+-----------------------------------------------------+------+
+        """
         
         self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/sectors/",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
-            data = json.loads(r.text)
+            raw_data = json.loads(r.text)
+            data = [{"sector":sector} for sector in raw_data]
             self.result = {"code":0,"message":f"{r.status_code}"}
         else:
             data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.sectors = data
 
-        return pd.DataFrame(self.sectors,columns=["sectors"])
+        return data
+        #return pd.DataFrame(self.sectors,columns=["sectors"])
     
 
-    def get_workers_ranges(self):
-        """/api/workers-range/"""
+    def get_workers_ranges(self) -> list:
+        """Retrieve allowed texts for workes range specification, and their range:
+        
+        The returned numeric ranges can be used to map a numeric value onto a valid workers range
+        text used across the database.
+        
+        Returns
+        -------
+        list(dict)
+           +-----------------+-----------------------------------------------------+------+
+           |column           | description                                         | type |
+           +=================+=====================================================+======+
+           |workers_range    | Text to be used, e.g. ``Less than 1000``            | str  |
+           +-----------------+-----------------------------------------------------+------+
+           |lower            | Numeric lower limit to select text ``n >= lower``   | int  |
+           +-----------------+-----------------------------------------------------+------+
+           |upper            | Numeric upper limit to select text ``n >= lower``   | int  |
+           +-----------------+-----------------------------------------------------+------+
+        """
         
         self.last_api_call_epoch = time.time()
         r = requests.get(f"{self.url}/api/workers-ranges/",headers=self.header)
         self.last_api_call_duration = time.time()-self.last_api_call_epoch
         if r.ok:
             workers_ranges = json.loads(r.text)
-            self.result = {"code":0,"message":f"{r.status_code}"}
             alldata = []
             for workers_range in workers_ranges:
                 if "-" in workers_range:
@@ -1074,13 +1273,16 @@ class OSH_API():
                     "lower":lower,
                     "upper":upper,
                 })
-            data = pd.DataFrame(alldata)
+            self.result = {"code":0,"message":f"{r.status_code}"}
+            #data = pd.DataFrame(alldata)
+            data = alldata
         else:
             data = pd.DataFrame({
                     "workers_range":[],
                     "lower":[],
                     "upper":[],
             })
+            data = []
             self.result = {"code":-1,"message":f"{r.status_code}"}
         self.workers_ranges = data
 

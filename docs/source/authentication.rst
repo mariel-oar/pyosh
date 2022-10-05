@@ -24,6 +24,12 @@ called secrets.
 Supply as parameter
 -------------------
 
+As stated above, when using a configuration management tool, supplying credentials in source code
+may cause these credentials to become visible to others.
+
+Basic Example
+`````````````
+
 .. code-block:: python
    :linenos:
    
@@ -31,6 +37,20 @@ Supply as parameter
 
    osh_api = pyosh.OSH_API(token='a584abce2b159c4d8cf88eac3a26fbe3b1a13b8e')
   
+Supply different URL
+````````````````````
+
+Supplying a different endpoint could be useful when using proxy servers, development environments, or
+local installations. 
+
+.. code-block:: python
+   :linenos:
+   
+   import pyosh
+
+   osh_api = pyosh.OSH_API(url='https://proxyse.example.com/?url=https://opensupplyhub.org')
+
+
 
 Supply as part of an .env file
 ------------------------------
