@@ -141,17 +141,17 @@ class OSH_API():
         
         Returns
         -------
-        list(dict()) 
+        list(dict)
+            An array of dictionaries (key,value pairs). See table below for 
+            return data structures.
         
-           A list of dictionaries.
-        
-           +-----------------+-----------------------------------+------+
-           |column           | description                       | type |
-           +=================+===================================+======+
-           |contributor_id   | The numeric ID of the contributor | int  |
-           +-----------------+-----------------------------------+------+
-           |contributor_name | The name of the contributor       | str  |
-           +-----------------+-----------------------------------+------+
+            +-----------------+-----------------------------------+------+
+            |column           | description                       | type |
+            +=================+===================================+======+
+            |contributor_id   | The numeric ID of the contributor | int  |
+            +-----------------+-----------------------------------+------+
+            |contributor_name | The name of the contributor       | str  |
+            +-----------------+-----------------------------------+------+
         """
         
         self.last_api_call_epoch = time.time()
@@ -188,7 +188,10 @@ class OSH_API():
            
         Returns
         -------
-        pandas.DataFrame   
+        list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +-----------+---------------------------------+------+
            |column     | description                     | type |
            +===========+=================================+======+
@@ -231,6 +234,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +-------------------------+---------------------------------------+--------+
            |column                   | description                           | type   |
            +=========================+=======================================+========+
@@ -312,7 +318,10 @@ class OSH_API():
         
         Returns
         -------
-        pandas.DataFrame   
+        list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+               
            +-----------------+---------------------------------+------+
            |column           | description                     | type |
            +=================++================================+======+
@@ -342,6 +351,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +-----------+---------------------------------+------+
            |column     | description                     | type |
            +===========+=================================+======+
@@ -442,6 +454,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+            An array of dictionaries (key,value pairs). See table below for 
+            return data structures.
+            
 
             +-------------------------------+-----------------------------------------------+-------+
             |column                         | description                                   | type  |
@@ -758,90 +773,133 @@ class OSH_API():
         Returns
         -------
         list(dict)
+            An array of dictionaries (key,value pairs). See tables below for example
+            return data structures, which depend on the value of the ``status`` field.
 
-            +--------------------------------+------------------------------------------+-------+
-            | fieldname                      | description                              | type  |
-            +================================+==========================================+=======+
-            | match_no                       | Running number of match found            | int   |
-            +--------------------------------+------------------------------------------+-------+
-            | item_id                        | Internal reference                       | int   |
-            +--------------------------------+------------------------------------------+-------+
-            | lon                            | Geographic longitude in degrees          | float |
-            +--------------------------------+------------------------------------------+-------+
-            | lat                            | Geographic latitude in degrees           | float |
-            +--------------------------------+------------------------------------------+-------+
-            | geocoded_address               | Address returned from geocoder           | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | status                         | One of ``MATCHED``, ``NEW_FACILITY``,    | str   |
-            |                                |                                          |       |
-            |                                | ``POTENTIAL_MATCH``, or ``ERROR``        |       |
-            +--------------------------------+------------------------------------------+-------+
-            | os_id                          | The OS ID                                | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_id                       | The OS ID of the match                   | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_lon                      | Geographic longitude of match            | float |
-            +--------------------------------+------------------------------------------+-------+
-            | match_lat                      | Geographic latitude of match             | float |
-            +--------------------------------+------------------------------------------+-------+
-            | match_name                     | Facility name of match                   | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_address                  | Address of match                         | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_country_code             |Match `ISO 3166-2 ountry code             | str   |
-            |                                |<https://iso.org/obp/ui/#search/code/>`_  |       |
-            +--------------------------------+------------------------------------------+-------+
-            | match_os_id                    | The OS ID of the match                   | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_other_names              | Other names found for match              | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_other_addresses          | Other addresses found for match          | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_contributors             | Contributors providing match             | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_country_name             |Match `ISO 3166 country name              | str   |
-            |                                |<https://iso.org/obp/ui/#search/code/>`_  |       |
-            +--------------------------------+------------------------------------------+-------+
-            | match_claim_info               | Claim information of match               | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_other_locations          |                                          | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_is_closed                | Flag indicating if match was closed      | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_activity_reports         |                                          | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_contributor_fields       |                                          | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_new_os_id                |                                          | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_has_inexact_coordinates  | Misnomer: Geocoordinates manually        | bool  |
-            |                                |                                          |       |
-            |                                | entered for match                        |       |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_name                  | Match extended field name                | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_address               | Extended field address of match          | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_number_of_workers     | Extended field number of workers of      | str   |
-            |                                |                                          |       |
-            |                                | match                                    |       |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_native_language_name  | Native facility language of match        | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_facility_type         | Facility type of match                   | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_processing_type       | Processing type of match                 | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_product_type          | Product type of match                    | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_ef_parent_company        | Parent company of match                  | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_created_from_created_at  | Timestamp match was created              | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_created_from_contributor | Contributor name who created match       | str   |
-            +--------------------------------+------------------------------------------+-------+
-            | match_sector                   | Sector assignment of match               | str   |
-            +--------------------------------+------------------------------------------+-------+
+
+        For status == ``MATCHED``
+
+        +--------------------------------+------------------------------------------+-------+
+        | fieldname                      | description                              | type  |
+        +================================+==========================================+=======+
+        | match_no                       | Running number of match found            | int   |
+        +--------------------------------+------------------------------------------+-------+
+        | item_id                        | Internal reference                       | int   |
+        +--------------------------------+------------------------------------------+-------+
+        | lon                            | Geographic longitude in degrees          | float |
+        +--------------------------------+------------------------------------------+-------+
+        | lat                            | Geographic latitude in degrees           | float |
+        +--------------------------------+------------------------------------------+-------+
+        | geocoded_address               | Address returned from geocoder           | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | status                         | Will be set to ``MATCHED``               | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | os_id                          | The OS ID                                | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_id                       | The OS ID of the match                   | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_lon                      | Geographic longitude of match            | float |
+        +--------------------------------+------------------------------------------+-------+
+        | match_lat                      | Geographic latitude of match             | float |
+        +--------------------------------+------------------------------------------+-------+
+        | match_name                     | Facility name of match                   | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_address                  | Address of match                         | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_country_code             |Match `ISO 3166-2 ountry code             | str   |
+        |                                |<https://iso.org/obp/ui/#search/code/>`_  |       |
+        +--------------------------------+------------------------------------------+-------+
+        | match_os_id                    | The OS ID of the match                   | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_other_names              | Other names found for match              | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_other_addresses          | Other addresses found for match          | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_contributors             | Contributors providing match             | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_country_name             |Match `ISO 3166 country name              | str   |
+        |                                |<https://iso.org/obp/ui/#search/code/>`_  |       |
+        +--------------------------------+------------------------------------------+-------+
+        | match_claim_info               | Claim information of match               | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_other_locations          |                                          | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_is_closed                | Flag indicating if match was closed      | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_activity_reports         |                                          | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_contributor_fields       |                                          | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_new_os_id                |                                          | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_has_inexact_coordinates  | Misnomer: Geocoordinates manually        | bool  |
+        |                                |                                          |       |
+        |                                | entered for match                        |       |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_name                  | Match extended field name                | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_address               | Extended field address of match          | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_number_of_workers     | Extended field number of workers of      | str   |
+        |                                |                                          |       |
+        |                                | match                                    |       |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_native_language_name  | Native facility language of match        | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_facility_type         | Facility type of match                   | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_processing_type       | Processing type of match                 | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_product_type          | Product type of match                    | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_ef_parent_company        | Parent company of match                  | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_created_from_created_at  | Timestamp match was created              | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_created_from_contributor | Contributor name who created match       | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | match_sector                   | Sector assignment of match               | str   |
+        +--------------------------------+------------------------------------------+-------+
+
+        
+        For status == ``NEW_FACILITY``
+
+        +--------------------------------+------------------------------------------+-------+
+        | fieldname                      | description                              | type  |
+        +================================+==========================================+=======+
+        | item_id                        | Internal reference                       | int   |
+        +--------------------------------+------------------------------------------+-------+
+        | lon                            | Geographic longitude in degrees          | float |
+        +--------------------------------+------------------------------------------+-------+
+        | lat                            | Geographic latitude in degrees           | float |
+        +--------------------------------+------------------------------------------+-------+
+        | geocoded_address               | Address returned from geocoder           | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | status                         | Well be set to ``NEW_FACILITY``          | str   |
+        +--------------------------------+------------------------------------------+-------+
+        | os_id                          | The OS ID                                | str   |
+        +--------------------------------+------------------------------------------+-------+
+        
+
+        For status == ``POTENTIAL_MATCH``
+
+          In addition to the fields in ``MATCHED``
+          
+        +-------------------------+------------------------------------------+-------+
+        | fieldname               | description                              | type  |
+        +=========================+==========================================+=======+
+        | match_confidence        | Numerical value between 0.0 and 1.0      | int   |
+        +-------------------------+------------------------------------------+-------+
+        | match_confirm_match_url | Path part of the endpoint to call        | float |
+        |                         | indicating confirming this match         |       |       
+        +-------------------------+------------------------------------------+-------+
+        | match_confirm_match_url | Path part of the endpoint to call        | float |
+        |                         | indicating rejecting this match          |       |
+        +-------------------------+------------------------------------------+-------+  
+        
+        
+        For status == ``ERROR``
+        
         """
         if len(data) == 0:
             payload = {}
@@ -969,6 +1027,8 @@ class OSH_API():
         Returns
         -------
         list(dict)
+            An array of dictionaries (key,value pairs). See table below for 
+            return data structures.
 
             +-------------------------------+-----------------------------------------------+-------+
             |column                         | description                                   | type  |
@@ -1100,6 +1160,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +-----------------+-----------------------------------------------------+------+
            |column           | description                                         | type |
            +=================+=====================================================+======+
@@ -1141,6 +1204,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +------------------+----------------------------------------------------+-------------+
            |column            | description                                        | type        |
            +==================+====================================================+=============+
@@ -1172,6 +1238,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +-----------------+-----------------------------------------------------+------+
            |column           | description                                         | type |
            +=================+=====================================================+======+
@@ -1207,6 +1276,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +-----------------+-----------------------------------------------------+------+
            |column           | description                                         | type |
            +=================+=====================================================+======+
@@ -1239,6 +1311,9 @@ class OSH_API():
         Returns
         -------
         list(dict)
+           An array of dictionaries (key,value pairs). See table below for 
+           return data structures.
+            
            +-----------------+-----------------------------------------------------+------+
            |column           | description                                         | type |
            +=================+=====================================================+======+
