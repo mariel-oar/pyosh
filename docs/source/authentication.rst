@@ -31,7 +31,6 @@ Basic Example
 `````````````
 
 .. code-block:: python
-   :linenos:
    
    import pyosh
 
@@ -44,7 +43,6 @@ Supplying a different endpoint could be useful when using proxy servers, develop
 local installations. 
 
 .. code-block:: python
-   :linenos:
    
    import pyosh
 
@@ -52,10 +50,64 @@ local installations.
 
 
 
-Supply as part of an .env file
-------------------------------
+Supply as part of an .env.yml file
+----------------------------------
+
+The ``OSH-API`` initialisation will look for either a file path given in ``path_to_env_yml``, or look for
+a file named ``.env.yml`` in its current folder. This file can contain entries for either, or both,
+the url to contact, and the authentication token.
+
+.. code-block:: python
+   
+   import pyosh
+
+   osh_api = pyosh.OSH_API(path_to_env_yml='../../credentials/env.yaml')
+
+
+.. code-block:: yaml
+
+    OSH_URL: https://opensupplyhub.org
+    OSH_TOKEN: 12345abcdef12345abcdef12345abcdef
+
+
+Supply as part of an URL
+------------------------
+
+In addition to providing an ``.env.yml`` via a file system, the ``OSH-API`` initialisation also
+accepts providing this file via a URL. This file can contain entries for either, or both,
+the url to contact, and the authentication token.
+
+.. code-block:: python
+   
+   import pyosh
+
+   osh_api = pyosh.OSH_API(url_to_env_yml='https://configserver.cluster.local/pyoshub/env.yaml')
+
+
+.. code-block:: yaml
+
+    OSH_URL: https://opensupplyhub.org
+    OSH_TOKEN: 12345abcdef12345abcdef12345abcdef
+
 
 Supply via an environment variable
 ----------------------------------
 
+Lastly, the ``OSH-API`` initialisation checks for the existence of environment variables
+``OSH_URL`` and ``OSH_TOKEN``. These can be set via shell configuration, or, for
+containers or kubernetes pods, as environment variables. Some managed cloud services
+will also allow setting these values securely.
 
+Order of precedence
+-------------------
+
+These settings will be evaluate in the following sequence:
+
+- Environment variables will always be considered, if present, else,
+- an explicit path to an ``.env.yml`` file, else
+- a URL providing an ``.env.yml`` file
+- a local file ``.env.yml`` 
+
+.. hint::
+
+   When provided, the file name can be different from ``.env.yml`` 
