@@ -11,7 +11,7 @@ Facility Lifecycle
 ------------------
 
 At the heart of the Open Supply Hub database are facilities, and the way they are being matched to
-geolocations, and, possibly, multiple successfive submissions. For API users, the most relevant
+geolocations, and, possibly, multiple successive submissions. For API users, the most relevant
 lifecycle is that of matching, or creating facilities.
 
 .. uml:: 
